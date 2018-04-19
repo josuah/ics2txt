@@ -1,0 +1,35 @@
+AGENDA(1)                   General Commands Manual                  AGENDA(1)
+
+NAME
+     agenda  plain text agenda with ical support
+
+SYNOPSIS
+     agenda txt [+- offset [ics file...]]
+     agenda tsv [+- offset [ics file...]]
+
+DESCRIPTION
+     agenda displays iCalendar (ical, .ics) files created by.
+
+     agenda txt [+- offset [ics file...]]
+             Display the agenda(s) file as plain text sorted by date.
+
+     agenda tsv [+- offset [ics file...]]
+             Display the agenda(s) file as a tab-separated values (tsv) one
+             entry per line, with the following fields in order:
+             DTSTART      begin date as an UNIX timestamp
+             DTEND        end date as an UNIX timestamp
+             CATEGORY     category
+             SUMMARY      symmary
+             LOCATION     location
+             DESCRIPTION  description
+
+ENVIRONMENT
+     TZ      Timezone to use for printing the dates.
+
+SEE ALSO
+     calendar(1), date(1),
+
+AUTHORS
+     Josuah Demangeon <mail@josuah.net>
+
+OpenBSD 6.3                    February 23, 2018                   OpenBSD 6.3

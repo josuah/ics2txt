@@ -3,6 +3,9 @@ MAN1	= agenda.1
 
 all:
 
+README: $(MAN1)
+	mandoc -T utf8 $(MAN1) | col -bx >$@
+
 install:
 	mkdir -p $(PREFIX)/bin
 	cp $(BIN) $(PREFIX)/bin
