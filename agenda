@@ -1,0 +1,182 @@
+#!/usr/bin/awk -f
+
+# handle ical agenda and display them in plain text
+
+function leap(yrs)
+{
+	return (yrs % 4 == 0) && (yrs % 100 != 0) || (yrs % 400 == 0);
+}
+
+function days_per_month(mth, yrs)
+{
+	if (mth == 2)
+		return 28 + leap(yrs);
+	else
+		return 30 + (mth - (mth > 7)) % 2;
+}
+
+function to_sec(yrs, mth, day, hrs, min, sec)
+{
+	while (--mth >= 1)
+		day += days_per_month(mth, yrs);
+	while (--yrs >= 1970)
+		day += 365 + leap(yrs);
+	return (((((day - 1) * 24) + hrs) * 60) + min) * 60 + sec;
+}
+
+function to_date(fmt, sec)
+{
+	for (yrs = 1970; sec >= (s = 3600 * 24 * (365 + leap(yrs))); yrs++)
+		sec -= s;
+	for (mth = 1; sec >= (s = 3600 * 24 * days_per_month(mth, yrs)); mth++)
+		sec -= s;
+	for (day = 1; sec >= (s = 3600 * 24); day++)
+		sec -= s;
+	for (hrs = 0; sec >= 3600; hrs++)
+		sec -= 3600;
+	for (min = 0; sec >= 60; min++)
+		sec -= 60;
+	return sprintf(fmt, yrs, mth, day, hrs, min, sec);
+}
+
+function date_ical(str, off) {
+	yrs = substr(str,  1, 4);
+	mth = substr(str,  5, 2);
+	day = substr(str,  7, 2);
+	hrs = substr(str, 10, 2);
+	min = substr(str, 12, 2);
+	return to_sec(yrs, mth, day, hrs, min, 0) - off;
+}
+
+function date_iso8601(date, off)
+{
+	yrs = substr(date,  1, 4);
+	mth = substr(date,  6, 2);
+	day = substr(date,  9, 2);
+	hrs = substr(date, 12, 2);
+	min = substr(date, 15, 2);
+	return to_sec(yrs, mth, day, hrs, min, 0) - off;
+}
+
+function swap(array, a, b)
+{
+	tmp = array[a];
+	array[a] = array[b];
+	array[b] = tmp;
+}
+
+function sort(array, beg, end)
+{
+	if (beg >= end)					# end recursion
+		return;
+
+	a = beg + 1;					# #1 is the pivot
+	b = end;
+	while (a < b) {
+		while (a < b && array[a] <= array[beg])	# beg: skip lesser
+			a++;
+		while (a < b && array[b] > array[beg])	# end: skip greater
+			b--;
+		swap(array, a, b);			# found 2 misplaced
+	}
+
+	if (array[beg] > array[a])			# put the pivot back
+		swap(array, beg, a);
+
+	sort(array, beg, a - 1);			# sort lower half
+	sort(array, a, end);				# sort higher half
+}
+
+function parse_ical(list, off)
+{
+	FS = "[:;]";
+
+	while (getline) {
+		gsub("\\\\[ntr]", "  ");
+		gsub("[ \t]*<[a-zA-Z0-9/]*>*[ \t]*", "");
+		gsub("\\\\", "");
+
+		if (match($0, "^ ")) {
+			event[type] = event[type] substr($0, 2, length($0) - 1);
+		} else {
+			type = $1;
+			i = index($0, ":");
+			event[type] = substr($0, i + 1, length($0) - i);
+		}
+
+		if ($0 ~ /END:VEVENT/)
+			list[++nb] = sprintf("%d\t%d\t%s\t%s\t%s\t%s",
+			    date_ical(event["DTSTART"], off),
+			    date_ical(event["DTEND"], off),
+			    event["CATEGORIES"],
+			    event["SUMMARY"],
+			    event["LOCATION"],
+			    event["DESCRIPTION"]);
+	}
+	sort(list, 1, nb);
+	return nb;
+}
+
+function txt(off)
+{
+	nb = parse_ical(list, off);
+	for (i = 1; i <= nb; i++) {
+		split(list[i], arr, "\t");
+		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
+	}
+}
+
+function txt_one(beg, end, cat, sum, loc, des, off) {
+	b = to_date("%04d/%02d/%02d %02d:%02d", beg + off);
+	e = to_date("%04d/%02d/%02d %02d:%02d", end + off);
+	b_mth = substr(b, 1, 7);
+	b_day = substr(b, 9, 2);
+	e_day = substr(e, 9, 2);
+	b_hrs = substr(b, 12);
+	e_hrs = substr(e, 12);
+
+	printf("%s\n%2s  %2s  %s\n%2s  %2s  %s%s\n",
+	    (b_mth != l_mth)	? ("\n[" b_mth "]\n")	: (""),
+	    (b_day != l_day)	? (b_day)		: (""), b_hrs, sum,
+	    (b_day != e_day)	? (e_day)		: (""), e_hrs,
+	    (cat) 		? ("[" cat "] ")	: (""), loc);
+
+	while ((line = substr(des, 1, 66)) != "") {
+		if (length(line) == 66)
+			sub(" +[^ ]*$", "", line);
+		printf("           %s\n", line);
+		des = substr(des, length(line) + 1);
+		sub("^ *", "", des);
+	}
+	l_mth = b_mth;
+	l_day = b_day;
+}
+
+function tsv(off)
+{
+	n = parse_ical(list, off);
+	for (i = 0; i < n; i++)
+		print(list[i]);
+}
+
+function usage()
+{
+	print("usage: agenda txt file.ics...");
+	print("       agenda tsv file.ics...");
+}
+
+BEGIN {
+	"date +%z" | getline off;
+	close("date +%z");
+	off = substr(off, 1, 3) * 3600;
+
+	if (ARGV[1] == "txt") {
+		ARGV[1] = ARGV[--ARGC];
+		txt(off);
+	} else if (ARGV[1] == "tsv") {
+		ARGV[1] = ARGV[--ARGC];
+		tsv(off);
+	} else {
+		usage();
+	}
+}

@@ -1,0 +1,80 @@
+.Dd $Mdocdate: February 23 2018$
+.Dt AGENDA 1
+.Os
+.
+.
+.Sh NAME
+.
+.Nm agenda
+.Nd plain text agenda with ical support
+.
+.
+.Sh SYNOPSIS
+.
+.Nm Ic txt Op +- Ar offset Op Ar ics file...
+.Nm Ic tsv Op +- Ar offset Op Ar ics file...
+.
+.
+.Sh DESCRIPTION
+.
+.Nm
+displays iCalendar 
+.Pq ical, Pa .ics
+files created by.
+.
+.Bl -tag -width indent
+.
+.It Nm Ic txt Op +- Ar offset Op Ar ics file...
+Display the agenda(s)
+.Ar file
+as plain text sorted by date.
+.
+.It Nm Ic tsv Op +- Ar offset Op Ar ics file...
+Display the agenda(s)
+.Ar file
+as a tab-separated values
+.Pq tsv
+one entry per line, with the following fields in order:
+.
+.Bl -tag -width xDESCRIPTIONx -compact
+.
+.It Dq Li DTSTART
+begin date as an UNIX timestamp
+.
+.It Dq Li DTEND
+end date as an UNIX timestamp
+.
+.It Dq Li CATEGORY
+category
+.
+.It Dq Li SUMMARY
+symmary
+.
+.It Dq Li LOCATION
+location
+.
+.It Dq Li DESCRIPTION
+description
+.
+.El
+.
+.
+.Sh ENVIRONMENT
+.
+.Bl -tag -width 6n
+.
+.It Ev TZ
+Timezone to use for printing the dates.
+.
+.El
+.
+.
+.Sh SEE ALSO
+.
+.Xr calendar 1 ,
+.Xr date 1 ,
+.
+.
+.Sh AUTHORS
+.
+.An Josuah Demangeon Aq Mt mail@josuah.net
