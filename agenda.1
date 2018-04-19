@@ -11,8 +11,8 @@
 .
 .Sh SYNOPSIS
 .
-.Nm Ic txt Op +- Ar offset Op Ar ics file...
-.Nm Ic tsv Op +- Ar offset Op Ar ics file...
+.Nm Ic txt Oo +- Oc Ns Ar offset Op Ar ics file...
+.Nm Ic tsv Oo +- Oc Ns Ar offset Op Ar ics file...
 .
 .
 .Sh DESCRIPTION
@@ -20,16 +20,17 @@
 .Nm
 displays iCalendar 
 .Pq ical, Pa .ics
-files created by.
+.Ar file
+or stdin if not specified in the format described by the command:
 .
 .Bl -tag -width indent
 .
-.It Nm Ic txt Op +- Ar offset Op Ar ics file...
+.It Ic txt
 Display the agenda(s)
 .Ar file
 as plain text sorted by date.
 .
-.It Nm Ic tsv Op +- Ar offset Op Ar ics file...
+.It Ic tsv
 Display the agenda(s)
 .Ar file
 as a tab-separated values
