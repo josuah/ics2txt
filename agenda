@@ -92,9 +92,9 @@ function parse_ical(list, off)
 	FS = "[:;]";
 
 	while (getline) {
-		gsub("\\\\[ntr]", "  ");
-		gsub("[ \t]*<[a-zA-Z0-9/]*>*[ \t]*", "");
-		gsub("\\\\", "");
+		gsub("\r", " "); gsub("\\\\[ntr]", "  "); gsub("\\\\", "");
+		gsub("^ *", ""); gsub(" *$", "");
+		gsub(" *<[a-zA-Z0-9/]*>* *", "");
 
 		if (match($0, "^ ")) {
 			event[type] = event[type] substr($0, 2, length($0) - 1);
@@ -117,15 +117,6 @@ function parse_ical(list, off)
 	return nb;
 }
 
-function txt(off)
-{
-	nb = parse_ical(list, off);
-	for (i = 1; i <= nb; i++) {
-		split(list[i], arr, "\t");
-		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
-	}
-}
-
 function txt_one(beg, end, cat, sum, loc, des, off) {
 	b = to_date("%04d/%02d/%02d %02d:%02d", beg + off);
 	e = to_date("%04d/%02d/%02d %02d:%02d", end + off);
@@ -144,18 +135,28 @@ function txt_one(beg, end, cat, sum, loc, des, off) {
 	while ((line = substr(des, 1, 66)) != "") {
 		if (length(line) == 66)
 			sub(" +[^ ]*$", "", line);
-		printf("           %s\n", line);
-		des = substr(des, length(line) + 1);
+		des = substr(des, length(line) + 2);
+		sub("^ *", "", line);
 		sub("^ *", "", des);
+		printf("           %s\n", line);
 	}
 	l_mth = b_mth;
 	l_day = b_day;
 }
 
+function txt(off)
+{
+	nb = parse_ical(list, off);
+	for (i = 1; i <= nb; i++) {
+		split(list[i], arr, "\t");
+		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
+	}
+}
+
 function tsv(off)
 {
-	n = parse_ical(list, off);
-	for (i = 0; i < n; i++)
+	nb = parse_ical(list, off);
+	for (i = 0; i < nb; i++)
 		print(list[i]);
 }
 
