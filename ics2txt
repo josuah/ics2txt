@@ -162,8 +162,8 @@ function tsv(off)
 
 function usage()
 {
-	print("usage: agenda txt file.ics...");
-	print("       agenda tsv file.ics...");
+	print("usage: ics2txt txt file.ics...");
+	print("       ics2txt tsv file.ics...");
 }
 
 BEGIN {

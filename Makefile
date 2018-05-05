@@ -1,5 +1,5 @@
-BIN	= agenda
-MAN1	= agenda.1
+BIN	= ics2txt
+MAN1	= ics2txt.1
 
 all:
 
