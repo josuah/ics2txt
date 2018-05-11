@@ -39,23 +39,23 @@ function to_date(fmt, sec)
 	return sprintf(fmt, yrs, mth, day, hrs, min, sec);
 }
 
-function date_ical(str, off) {
+function date_ical(str, offset) {
 	yrs = substr(str,  1, 4);
 	mth = substr(str,  5, 2);
 	day = substr(str,  7, 2);
 	hrs = substr(str, 10, 2);
 	min = substr(str, 12, 2);
-	return to_sec(yrs, mth, day, hrs, min, 0) - off;
+	return to_sec(yrs, mth, day, hrs, min, 0) - offset;
 }
 
-function date_iso8601(date, off)
+function date_iso8601(date, offset)
 {
 	yrs = substr(date,  1, 4);
 	mth = substr(date,  6, 2);
 	day = substr(date,  9, 2);
 	hrs = substr(date, 12, 2);
 	min = substr(date, 15, 2);
-	return to_sec(yrs, mth, day, hrs, min, 0) - off;
+	return to_sec(yrs, mth, day, hrs, min, 0) - offset;
 }
 
 function swap(array, a, b)
@@ -87,7 +87,7 @@ function sort(array, beg, end)
 	sort(array, a, end);				# sort higher half
 }
 
-function parse_ical(list, off)
+function parse_ical(list, offset)
 {
 	FS = "[:;]";
 
@@ -106,8 +106,8 @@ function parse_ical(list, off)
 
 		if ($0 ~ /END:VEVENT/)
 			list[++nb] = sprintf("%d\t%d\t%s\t%s\t%s\t%s",
-			    date_ical(event["DTSTART"], off),
-			    date_ical(event["DTEND"], off),
+			    date_ical(event["DTSTART"], offset),
+			    date_ical(event["DTEND"], offset),
 			    event["CATEGORIES"],
 			    event["SUMMARY"],
 			    event["LOCATION"],
@@ -117,9 +117,9 @@ function parse_ical(list, off)
 	return nb;
 }
 
-function txt_one(beg, end, cat, sum, loc, des, off) {
-	b = to_date("%04d/%02d/%02d %02d:%02d", beg + off);
-	e = to_date("%04d/%02d/%02d %02d:%02d", end + off);
+function txt_one(beg, end, cat, sum, loc, des, offset) {
+	b = to_date("%04d/%02d/%02d %02d:%02d", beg + offset);
+	e = to_date("%04d/%02d/%02d %02d:%02d", end + offset);
 	b_mth = substr(b, 1, 7);
 	b_day = substr(b, 9, 2);
 	e_day = substr(e, 9, 2);
@@ -144,18 +144,18 @@ function txt_one(beg, end, cat, sum, loc, des, off) {
 	l_day = b_day;
 }
 
-function txt(off)
+function txt(offset)
 {
-	nb = parse_ical(list, off);
+	nb = parse_ical(list, offset);
 	for (i = 1; i <= nb; i++) {
 		split(list[i], arr, "\t");
 		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
 	}
 }
 
-function tsv(off)
+function tsv(offset)
 {
-	nb = parse_ical(list, off);
+	nb = parse_ical(list, offset);
 	for (i = 0; i < nb; i++)
 		print(list[i]);
 }
@@ -167,16 +167,16 @@ function usage()
 }
 
 BEGIN {
-	"date +%z" | getline off;
+	"date +%z" | getline offset;
 	close("date +%z");
-	off = substr(off, 1, 3) * 3600;
+	offset = substr(offset, 1, 3) * 3600;
 
 	if (ARGV[1] == "txt") {
 		ARGV[1] = ARGV[--ARGC];
-		txt(off);
+		txt(offset);
 	} else if (ARGV[1] == "tsv") {
 		ARGV[1] = ARGV[--ARGC];
-		tsv(off);
+		tsv(offset);
 	} else {
 		usage();
 	}
