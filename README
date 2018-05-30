@@ -1,20 +1,19 @@
-AGENDA(1)                   General Commands Manual                  AGENDA(1)
+ICS2TXT(1)                  General Commands Manual                 ICS2TXT(1)
 
 NAME
-     agenda  plain text agenda with ical support
+     ics2txt  convert ics file to plain text or TSV
 
 SYNOPSIS
-     agenda txt [+- offset [ics file...]]
-     agenda tsv [+- offset [ics file...]]
+     ics2txt txt [+-]offset [ics file...]
+     ics2txt tsv [+-]offset [ics file...]
 
 DESCRIPTION
-     agenda displays iCalendar (ical, .ics) files created by.
+     ics2txt displays iCalendar (ical, .ics) file or stdin if not specified in
+     the format described by the command:
 
-     agenda txt [+- offset [ics file...]]
-             Display the agenda(s) file as plain text sorted by date.
+     txt     Display the ics2txt(s) file as plain text sorted by date.
 
-     agenda tsv [+- offset [ics file...]]
-             Display the agenda(s) file as a tab-separated values (tsv) one
+     tsv     Display the ics2txt(s) file as a tab-separated values (tsv) one
              entry per line, with the following fields in order:
              DTSTART      begin date as an UNIX timestamp
              DTEND        end date as an UNIX timestamp
@@ -27,9 +26,44 @@ ENVIRONMENT
      TZ      Timezone to use for printing the dates.
 
 SEE ALSO
-     calendar(1), date(1),
+     calendar(1), date(1), txt2ics(1)
+
+STANDARDS
+     Desruisseaux, Internet Calendaring and Scheduling Core Object
+     Specification (iCalendar), RFC 5545, September 2009.
 
 AUTHORS
      Josuah Demangeon <mail@josuah.net>
 
-OpenBSD 6.3                    February 23, 2018                   OpenBSD 6.3
+OpenBSD 6.3                      May 21, 2018                      OpenBSD 6.3
+
+------------------------------------------------------------------------------
+
+TXT2ICS(1)                  General Commands Manual                 TXT2ICS(1)
+
+NAME
+     txt2ics  convert plain text to an ics file
+
+SYNOPSIS
+     txt2ics
+
+DESCRIPTION
+     txt2ics prompts the user for event information and print them in the
+     iCalendar format.  If stdin is ont a TTY, it will not print the prompt
+     string and act as a converter tool.
+
+     It uses floating events: If it is 12:30, it will always be 12:30 of the
+     country he resides in: if he moves to another time zone, it will be 12:30
+     of this new time zone.  See this as the time zone where the event happen.
+
+SEE ALSO
+     calendar(1), date(1), ics2txt(1)
+
+STANDARDS
+     Desruisseaux, Internet Calendaring and Scheduling Core Object
+     Specification (iCalendar), RFC 5545, September 2009.
+
+AUTHORS
+     Josuah Demangeon <mail@josuah.net>
+
+OpenBSD 6.3                      May 30, 2018                      OpenBSD 6.3

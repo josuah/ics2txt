@@ -1,5 +1,5 @@
-BIN	= ics2txt
-MAN1	= ics2txt.1
+BIN	= ics2txt txt2ics
+MAN1	= ics2txt.1 txt2ics.1
 
 all:
 

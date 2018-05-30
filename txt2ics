@@ -3,7 +3,7 @@
 function prompt(msg)
 {
 	if (TTY)
-		printf("%s", msg) >"/dev/tty";
+		printf("%s", msg) >"/dev/stderr";
 	if (!getline str)
 		exit(1);
 	return str;
@@ -58,11 +58,20 @@ function parse_date(str, tm)
 BEGIN {
 	TTY = !system("tty >/dev/null");
 
+	if (TTY) {
+		"date +%Y" | getline yrs
+		close("date +%Y");
+		system("cal " yrs ">/dev/stderr");
+		system("date >/dev/stderr");
+		system("date +'%Y/%m/%d %H:%M' >/dev/stderr");
+		print("") >"/dev/stderr";
+	}
+
 	do beg = prompt("Start [YYYY/MM/DD HH:MM] or [HH:MM] for today:    ");
-	while (parse_date(beg, beg_tm) == -1);
+	while (parse_date(beg, tm_beg) == -1);
 
 	do end = prompt("End   [YYYY/MM/DD HH:MM] or [HH:MM] for same day: ");
-	while (parse_date(end, end_tm) == -1);
+	while (parse_date(end, tm_end) == -1);
 
 	sum = prompt("Summary:     ");
 	cat = prompt("Category:    ");
