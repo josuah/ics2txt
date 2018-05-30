@@ -1,0 +1,84 @@
+#!/usr/bin/awk -f
+
+function prompt(msg)
+{
+	if (TTY)
+		printf("%s", msg) >"/dev/tty";
+	if (!getline str)
+		exit(1);
+	return str;
+}
+
+function parse_date(str, tm)
+{
+	if (length(str) == 5) {
+		"date +%Y/%m/%d" | getline date
+		str = date " " str ;
+		close("date +%Y/%m/%d");
+	}
+
+	if (length(str) != 16) {
+		print("invalid date length") >"/dev/stderr";
+		return -1;
+	}
+
+	tm["yrs"] = substr(str, 1, 4);
+	if (! match(tm["yrs"], "^[0-9]+$")) {
+		print("invalid year: " tm["yrs"]) >"/dev/stderr";
+		return -1;
+	}
+
+	tm["mth"] = substr(str, 6, 2);
+	if (! match(tm["mth"], "^[0-1][0-9]$")) {
+		print("invalid month: " tm["mth"]) >"/dev/stderr";
+		return -1;
+	}
+
+	tm["day"] = substr(str, 9, 2);
+	if (! match(tm["day"], "^[0-3][0-9]$")) {
+		print("invalid day: " tm["day"]) >"/dev/stderr";
+		return -1;
+	}
+
+	tm["hrs"] = substr(str, 12, 2);
+	if (! match(tm["hrs"], "^[0-2][0-9]$")) {
+		print("invalid hours: " tm["hrs"]) >"/dev/stderr";
+		return -1;
+	}
+
+	tm["min"] = substr(str, 15, 2);
+	if (! match(tm["min"], "^[0-6][0-9]$")) {
+		print("invalid minutes: " tm["min"]) >"/dev/stderr";
+		return -1;
+	}
+
+	return 0;
+}
+
+BEGIN {
+	TTY = !system("tty >/dev/null");
+
+	do beg = prompt("Start [YYYY/MM/DD HH:MM] or [HH:MM] for today:    ");
+	while (parse_date(beg, beg_tm) == -1);
+
+	do end = prompt("End   [YYYY/MM/DD HH:MM] or [HH:MM] for same day: ");
+	while (parse_date(end, end_tm) == -1);
+
+	sum = prompt("Summary:     ");
+	cat = prompt("Category:    ");
+	loc = prompt("Location:    ");
+	des = prompt("Description: ");
+
+	print("BEGIN:VEVENT");
+	print("DTSTART:" \
+		tm_beg["yrs"] tm_beg["mth"] tm_beg["day"] "T" \
+		tm_beg["hrs"] tm_beg["min"] "00");
+	print("DTEND:" \
+		tm_end["yrs"] tm_end["mth"] tm_end["day"] "T" \
+		tm_end["hrs"] tm_end["min"] "00");
+	if (cat) print("CATEGORIES:"	cat);
+	if (sum) print("SUMMARY:"	sum);
+	if (des) print("DESCRIPTION:"	des);
+	if (loc) print("LOCATION:"	loc);
+	print("END:VEVENT");
+}

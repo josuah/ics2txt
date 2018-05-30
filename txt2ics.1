@@ -1,0 +1,50 @@
+.Dd $Mdocdate: May 30 2018$
+.Dt TXT2ICS 1
+.Os
+.
+.
+.Sh NAME
+.
+.Nm txt2ics
+.Nd convert plain text to an ics file
+.
+.
+.Sh SYNOPSIS
+.
+.Nm
+.
+.
+.Sh DESCRIPTION
+.
+.Nm
+prompts the user for event information and print them in the iCalendar format.
+If stdin is ont a TTY, it will not print the prompt string and act as a
+converter tool.
+.
+.Pp
+It uses
+.Dq floating events :
+If it is 12:30, it will always be 12:30 of the country he resides in: if he moves
+to another time zone, it will be 12:30 of this new time zone.
+See this as the time zone where the event happen.
+.
+.
+.Sh SEE ALSO
+.
+.Xr calendar 1 ,
+.Xr date 1 ,
+.Xr ics2txt 1
+.
+.Sh STANDARDS
+.
+.Rs
+.%A Desruisseaux
+.%D September 2009
+.%T Internet Calendaring and Scheduling Core Object Specification (iCalendar)
+.%R RFC 5545
+.Re
+.
+.
+.Sh AUTHORS
+.
+.An Josuah Demangeon Aq Mt mail@josuah.net

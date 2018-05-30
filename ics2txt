@@ -1,5 +1,4 @@
 #!/usr/bin/awk -f
-
 # handle ical agenda and display them in plain text
 
 function leap(yrs)
