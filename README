@@ -1,69 +1,52 @@
-ICS2TXT(1)                  General Commands Manual                 ICS2TXT(1)
+agenda
+================================================================================
 
-NAME
-     ics2txt  convert ics file to plain text or TSV
+*agenda* is an awk scripts to deal with iCal [1] format to publish,
+display and convert *.ics files.
 
-SYNOPSIS
-     ics2txt txt [+-]offset [ics file...]
-     ics2txt tsv [+-]offset [ics file...]
+It is still a work in progress and should be released soon.  In the meantime,
+example output from l'agenda du libre [2]:
 
-DESCRIPTION
-     ics2txt displays iCalendar (ical, .ics) file or stdin if not specified in
-     the format described by the command:
+	[2017/04]
 
-     txt     Display the ics2txt(s) file as plain text sorted by date.
+	19  16:00  Linux et les Logiciels Libres
+	    19:00  château Goerg, Callian, Provence-Alpes-Côte d&#39;Azur, France
+	           Venez découvrir Linux et les logiciels libres, mais aussi vous
+	           faire aider avec votre matériel informatique quel qu’il soit,
+	           imprimante, box, tablette, smartphone y compris.
 
-     tsv     Display the ics2txt(s) file as a tab-separated values (tsv) one
-             entry per line, with the following fields in order:
-             DTSTART      begin date as an UNIX timestamp
-             DTEND        end date as an UNIX timestamp
-             CATEGORY     category
-             SUMMARY      symmary
-             LOCATION     location
-             DESCRIPTION  description
+	    16:30  Permanence GNU/Linux - Les Quatre Libertés
+	    18:30  10 rue François Henry d’Harcourt, Montpellier, Occitanie, France
 
-ENVIRONMENT
-     TZ      Timezone to use for printing the dates.
+	    17:00  Atelier artiste - hacker
+	    19:00  62 rue Fiéffé, Bordeaux, Nouvelle-Aquitaine, France
+	           Ateliers-cours à la fabrique-pola - L@bx
 
-SEE ALSO
-     calendar(1), date(1), txt2ics(1)
+	    17:00  Introduction à la programmation de jeux
+	    19:00  55 rue de Vincennes, Montreuil, Île-de-France, France
 
-STANDARDS
-     Desruisseaux, Internet Calendaring and Scheduling Core Object
-     Specification (iCalendar), RFC 5545, September 2009.
+	    17:30  SGEG
+	    20:00  8 rue Colary, Carnac, Bretagne, France
+	           Le SGEG (Sansten GNU Easy Group) vous invite tous les
+	           3e mercredi de chaque mois au SGEG Meeting pour discuter de
+	           Logiciel Libre, boire un verre, manger un morceau et surtout se
+	           rencontrer !
 
-AUTHORS
-     Josuah Demangeon <mail@josuah.net>
+	    17:30  Rencontre Logiciels Libres
+	    20:30  17 rue Bellegarde, Toulouse, Occitanie, France
+	           L’association Toulibre organise une rencontre autour des
+	           Logiciels Libres le mercredi 19 avril 2017, de 19h30 à 22h30 au
+	           Centre Culturel Bellegarde, 17 rue Bellegarde à Toulouse.
 
-OpenBSD 6.3                      May 21, 2018                      OpenBSD 6.3
+	    19:00  Rencontre Tetalab
+	    21:00  12 rue Ferdinand Lassalle, Toulouse, Occitanie, France
+	           Rencontre hebdomadaire des hackers et artistes libristes
+	           Toulousains.
 
-------------------------------------------------------------------------------
+	20  16:00  Soirée Cozy Cloud
+	    18:00  123 boulevard Louis Blanc, La Roche-sur-Yon, Pays de la Loire, France
+	           Le 20 Avril 2017, K’ Rément Libre et LabOuest vous proposent
+	           de venir découvrir Cozy.
 
-TXT2ICS(1)                  General Commands Manual                 TXT2ICS(1)
-
-NAME
-     txt2ics  convert plain text to an ics file
-
-SYNOPSIS
-     txt2ics
-
-DESCRIPTION
-     txt2ics prompts the user for event information and print them in the
-     iCalendar format.  If stdin is ont a TTY, it will not print the prompt
-     string and act as a converter tool.
-
-     It uses floating events: If it is 12:30, it will always be 12:30 of the
-     country he resides in: if he moves to another time zone, it will be 12:30
-     of this new time zone.  See this as the time zone where the event happen.
-
-SEE ALSO
-     calendar(1), date(1), ics2txt(1)
-
-STANDARDS
-     Desruisseaux, Internet Calendaring and Scheduling Core Object
-     Specification (iCalendar), RFC 5545, September 2009.
-
-AUTHORS
-     Josuah Demangeon <mail@josuah.net>
-
-OpenBSD 6.3                      May 30, 2018                      OpenBSD 6.3
+[1]: https://tools.ietf.org/rfc/rfc5545.txt
+[2]: https://www.agendadulibre.org
