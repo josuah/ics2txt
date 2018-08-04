@@ -44,7 +44,10 @@ function date_ical(str, offset) {
 	day = substr(str,  7, 2);
 	hrs = substr(str, 10, 2);
 	min = substr(str, 12, 2);
-	return to_sec(yrs, mth, day, hrs, min, 0) - offset;
+	if (substr(str, 16, 1) == "Z")
+		return to_sec(yrs, mth, day, hrs, min, 0);
+	else
+		return to_sec(yrs, mth, day, hrs, min, 0) - offset;
 }
 
 function date_iso8601(date, offset)
@@ -148,7 +151,7 @@ function txt(offset)
 	nb = parse_ical(list, offset);
 	for (i = 1; i <= nb; i++) {
 		split(list[i], arr, "\t");
-		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6]);
+		txt_one(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], offset);
 	}
 }
 
@@ -166,9 +169,13 @@ function usage()
 }
 
 BEGIN {
-	"date +%z" | getline offset;
+	"date +%z" | getline offset_str;
 	close("date +%z");
-	offset = substr(offset, 1, 3) * 3600;
+
+	offset = substr(offset_str, 2, 2) * 3600;
+	offset += substr(offset_str, 4, 2) * 60;
+	if (substr(offset_str, 1, 1) == "-")
+		offset *= -1;
 
 	if (ARGV[1] == "txt") {
 		ARGV[1] = ARGV[--ARGC];
