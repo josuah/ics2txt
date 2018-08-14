@@ -158,7 +158,7 @@ function txt(offset)
 function tsv(offset)
 {
 	nb = parse_ical(list, offset);
-	for (i = 0; i < nb; i++)
+	for (i = 1; i <= nb; i++)
 		print(list[i]);
 }
 
