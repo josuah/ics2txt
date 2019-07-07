@@ -6,13 +6,12 @@
 .Sh NAME
 .
 .Nm ics2txt
-.Nd convert ics file to plain text or TSV
+.Nd convert ics file to a simple plain text format
 .
 .
 .Sh SYNOPSIS
 .
-.Nm Ic txt Oo +- Oc Ns Ar offset Op Ar ics file...
-.Nm Ic tsv Oo +- Oc Ns Ar offset Op Ar ics file...
+.Nm Ar ics-file...
 .
 .
 .Sh DESCRIPTION
@@ -22,42 +21,6 @@ displays iCalendar
 .Pq ical, Pa .ics
 .Ar file
 or stdin if not specified in the format described by the command:
-.
-.Bl -tag -width indent
-.
-.It Ic txt
-Display the ics2txt(s)
-.Ar file
-as plain text sorted by date.
-.
-.It Ic tsv
-Display the ics2txt(s)
-.Ar file
-as a tab-separated values
-.Pq tsv
-one entry per line, with the following fields in order:
-.
-.Bl -tag -width xDESCRIPTIONx -compact
-.
-.It Dq Li DTSTART
-begin date as an UNIX timestamp
-.
-.It Dq Li DTEND
-end date as an UNIX timestamp
-.
-.It Dq Li CATEGORY
-category
-.
-.It Dq Li SUMMARY
-symmary
-.
-.It Dq Li LOCATION
-location
-.
-.It Dq Li DESCRIPTION
-description
-.
-.El
 .
 .
 .Sh ENVIRONMENT
@@ -74,8 +37,7 @@ Timezone to use for printing the dates.
 .
 .Xr cal 1 ,
 .Xr calendar 1 ,
-.Xr date 1 ,
-.Xr txt2ics 1
+.Xr date 1
 .
 .Sh STANDARDS
 .
