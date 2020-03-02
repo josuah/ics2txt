@@ -1,7 +1,49 @@
-sical
-=====
+ICS2TXT(1)                  General Commands Manual                 ICS2TXT(1)
 
-*sical* is set of awk scripts to deal with iCal [1] format to publish,
-display and convert *.ics files, though a simple central TSV format.
+NAME
+     ics2txt – convert ics file to simpler tsv or txt formats
 
-[1]: https://tools.ietf.org/rfc/rfc5545.txt
+SYNOPSIS
+     ics2txt-tsv <file.ics >file.tsv
+     ics2txt-ics <file.tsv >file.ics
+     ics2txt-txt <file.tsv >file.txt
+     ics2txt-back <file.txt >file.tsv
+
+DESCRIPTION
+     ics2txt is set of awk scripts to deal with iCal (.ics) format to publish,
+     display and convert *.ics files, though a simple central TSV format.
+
+     They all read from either stdin or the file passed as argument, and write
+     to stdout.
+
+     file.tsv files have one line per event, all with the following fields,
+     separated by one tab:
+      1. Begining (epoch)
+      2. End (epoch)
+      3. Category
+      4. Location
+      5. Summary
+      6. Description
+
+EXAMPLES
+     Convert a calendar from HTTP .ics to custom .txt sorted by beginning:
+           curl $url.ics | ics2txt-tsv | sort -n -k 1,1 | ics2txt-txt
+
+     Convert a custom .txt format back to an .ics file and publish it:
+           ics2txt-back cal.txt | ics2txt-ics | ssh www@$host 'cat
+           >/var/www/cal.ics'
+
+     Split an file according to the category, saved as .tsv:
+           ics2txt-tsv cal.txt | awk -F '\t' '{ f = $3".tsv"; print >>f }'
+
+SEE ALSO
+     cal(1), calendar(1), date(1), sort(1)
+
+STANDARDS
+     Desruisseaux, Internet Calendaring and Scheduling Core Object
+     Specification (iCalendar), RFC 5545, September 2009.
+
+AUTHORS
+     Josuah Demangeon <me@josuah.net>
+
+OpenBSD 6.6                      March 1, 2020                     OpenBSD 6.6

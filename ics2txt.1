@@ -19,9 +19,11 @@
 .Sh DESCRIPTION
 .
 .Nm
-is a set of tools to convert between iCalendar 
-.Pq ical
-and other simple text formats: tsv, custom-text.
+is set of awk scripts to deal with iCal
+.Pq Pa .ics
+format to publish, display and convert *.ics files, though a simple
+central TSV format.
+.Pp
 They all read from either stdin or the file passed as argument, and
 write to stdout.
 .
@@ -76,14 +78,15 @@ Split an
 .ics
 file according to the category, saved as
 .Pa .tsv :
-.Dl ics2txt-tsv cal.txt | awk -F '\t' '{ file = $3".tsv"; print >>file }'
+.Dl ics2txt-tsv cal.txt | awk -F '\et' '{ f = $3".tsv"; print >>f }'
 .
 .
 .Sh SEE ALSO
 .
 .Xr cal 1 ,
 .Xr calendar 1 ,
-.Xr date 1
+.Xr date 1 ,
+.Xr sort 1
 .
 .
 .Sh STANDARDS
