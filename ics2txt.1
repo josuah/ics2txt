@@ -12,18 +12,24 @@
 .Sh SYNOPSIS
 .
 .Nm ics2txt-tsv Ar <file.ics >file.tsv
-.Nm ics2txt-txt Ar <file.tsv >file.txt
 .Nm ics2txt-ics Ar <file.tsv >file.ics
+.Nm ics2txt-txt Ar <file.tsv >file.txt
 .Nm ics2txt-back Ar <file.txt >file.tsv
 .
 .Sh DESCRIPTION
 .
 .Nm
-convert iCalendar 
+is a set of tools to convert between iCalendar 
 .Pq ical
-.Ar file.ics
-or stdin if not specified to a tab separated value format, with one
-line per entry, and one column per field:
+and other simple text formats: tsv, custom-text.
+They all read from either stdin or the file passed as argument, and
+write to stdout.
+.
+.Pp
+.The
+.Pa file.tsv
+files have one line per event, all with the following fields,
+separated by one tab:
 .
 .Bl -offset 1n -width 1n -enum -compact
 .
@@ -42,17 +48,35 @@ Location
 .It
 Summary
 .
-.It description
-description
+.It
+Description
 .
 .El
 .
+.
+.Sh EXAMPLES
+.
+Convert a calendar from HTTP
+.Pa .ics
+to custom
+.Pa .txt
+sorted by beginning:
+.Dl curl "$url.ics" | ics2txt-tsv | sort -n -k 1,1 | ics2txt-txt
+.
 .Pp
-The
-.Sq \en
-and
-.Sq \et
-charaters may represent newlines and tabs.
+Convert a custom
+.Pa .txt
+format back to an
+.Pa .ics
+file and publish it:
+.Dl ics2txt-back cal.txt | ics2txt-ics | ssh "www@$host" 'cat >/var/www/cal.ics'
+.
+.Pp
+Split an
+.ics
+file according to the category, saved as
+.Pa .tsv :
+.Dl ics2txt-tsv cal.txt | awk -F '\t' '{ file = $3".tsv"; print >>file }'
 .
 .
 .Sh SEE ALSO
