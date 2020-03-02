@@ -1,0 +1,64 @@
+#!/usr/bin/awk -f
+
+function isleap(year)
+{
+	return (year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0)
+}
+
+function mdays(mon, year)
+{
+	return (mon == 2) ? (28 + isleap(year)) : (30 + (mon + (mon > 7)) % 2)
+}
+
+function timegm(year, mon, mday, hour, min, sec)
+{
+	while (--mon >= 1)
+		mday += mdays(mon, year)
+	while (--year >= 1970)
+		mday += 365 + isleap(year)
+	return (((((mday - 1) * 24) + hour) * 60) + min) * 60 + sec
+}
+
+function date_ical(str, offset,
+	year, mon, mday, hour, min)
+{
+	year = substr(str,  1, 4)
+	mon  = substr(str,  5, 2)
+	mday = substr(str,  7, 2)
+	hour = substr(str, 10, 2)
+	min  = substr(str, 12, 2)
+	offset = (substr(str, 16, 1) == "Z" ? 0 : offset)
+	return timegm(year, mon, mday, hour, min, 0) - offset
+}
+
+BEGIN {
+	"date +%z" | getline offset_str
+	close("date +%z")
+	hour = substr($0, 4, 2)
+	min = substr($0, 6, 2)
+	tzoffset = substr(zone, 3, 1) hour * 3600 + min * 60
+
+	FS = "[:;]"
+}
+
+{
+	gsub("\r", ""); gsub("\t", "\\\\t")
+	gsub("^ *", ""); gsub(" *$", "")
+
+	if (match($0, "^ ")) {
+		event[type] = event[type] substr($0, 2, length($0) - 1)
+	} else {
+		type = $1
+		i = index($0, ":")
+		event[type] = substr($0, i + 1, length($0) - i)
+	}
+
+	if ($0 ~ /^END:VEVENT/)
+		printf("%d\t%d\t%s\t%s\t%s\t%s\n",
+		  date_ical(event["DTSTART"], offset),
+		  date_ical(event["DTEND"], offset),
+		  event["CATEGORIES"],
+		  event["LOCATION"],
+		  event["SUMMARY"],
+		  event["DESCRIPTION"])
+}

@@ -1,0 +1,97 @@
+#!/usr/bin/awk -f
+
+function isleap(year)
+{
+	return (year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0)
+}
+
+function mdays(mon, year)
+{
+	return (mon == 2) ? (28 + isleap(year)) : (30 + (mon + (mon > 7)) % 2)
+}
+
+# Split the time in seconds since epoch into a table, with fields
+# named as with gmtime(3): tm["year"], tm["mon"], tm["mday"],
+# tm["hour"], tm["min"], tm["sec"]
+function gmtime(sec, tm,
+	s)
+{
+	tm["year"] = 1970
+	while (sec >= (s = 86400 * (365 + isleap(tm["year"])))) {
+		tm["year"]++
+		sec -= s
+	}
+
+	tm["mon"] = 1
+	while (sec >= (s = 86400 * mdays(tm["mon"], tm["year"]))) {
+		tm["mon"]++
+		sec -= s
+	}
+
+	tm["mday"] = 1
+	while (sec >= (s = 86400)) {
+		tm["mday"]++
+		sec -= s
+	}
+
+	tm["hour"] = 0
+	while (sec >= 3600) {
+		tm["hour"]++
+		sec -= 3600
+	}
+
+	tm["min"] = 0
+	while (sec >= 60) {
+		tm["min"]++
+		sec -= 60
+	}
+
+	tm["sec"] = sec
+}
+
+function print_fold(prefix, s, n)
+{
+	while (s != "") {
+		line = substr(s, 1, n)
+		if (length(s) > n) sub(" +[^ \t\r\n]*$", "", line)
+		print prefix line
+		s = substr(s, length(line) + 2)
+	}
+}
+
+BEGIN {
+	cmd = "date +%z"
+	cmd | getline zone
+	close(cmd)
+
+	hour = substr(zone, 2, 2)
+	min = substr(zone, 4, 2)
+
+	offset = (substr(zone, 1, 1) "1") * (hour * 3600 + min * 60)
+	print "TZ" zone
+}
+
+{
+	split($0, a, "\t")
+	gmtime(a[1] + offset, beg)
+	gmtime(a[2] + offset, end)
+	cat = a[3]; loc = a[4]; sum = a[5]; des = a[6]
+
+	print ""
+	printf "%04d-%02d-%02d %02d:%02d  ",
+	  beg["year"], beg["mon"], beg["mday"], beg["hour"], beg["min"]
+	print sum
+
+	printf "%04d-%02d-%02d %02d:%02d  ",
+	  end["year"], end["mon"], end["mday"], end["hour"], end["min"]
+	print "[" cat "] " loc
+
+	sub("^ *", "", des)
+	sub(" *$", "", des)
+	if (des)
+		print_fold("   ", des, 80)
+}
+
+END {
+	print ""
+}

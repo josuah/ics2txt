@@ -1,4 +1,4 @@
-BIN	= ics2txt
+BIN	= ics2txt-*
 MAN1	= ics2txt.1
 
 all:

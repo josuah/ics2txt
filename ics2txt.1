@@ -1,4 +1,4 @@
-.Dd $Mdocdate: May 21 2018$
+.Dd $Mdocdate: Mar 1 2020$
 .Dt ICS2TXT 1
 .Os
 .
@@ -6,31 +6,53 @@
 .Sh NAME
 .
 .Nm ics2txt
-.Nd convert ics file to a simple plain text format
+.Nd convert ics file to simpler tsv or txt formats
 .
 .
 .Sh SYNOPSIS
 .
-.Nm Ar ics-file...
-.
+.Nm ics2txt-tsv Ar <file.ics >file.tsv
+.Nm ics2txt-txt Ar <file.tsv >file.txt
+.Nm ics2txt-ics Ar <file.tsv >file.ics
+.Nm ics2txt-back Ar <file.txt >file.tsv
 .
 .Sh DESCRIPTION
 .
 .Nm
-displays iCalendar 
-.Pq ical, Pa .ics
-.Ar file
-or stdin if not specified in the format described by the command:
+convert iCalendar 
+.Pq ical
+.Ar file.ics
+or stdin if not specified to a tab separated value format, with one
+line per entry, and one column per field:
 .
+.Bl -offset 1n -width 1n -enum -compact
 .
-.Sh ENVIRONMENT
+.It
+Begining (epoch)
 .
-.Bl -tag -width 6n
+.It
+End (epoch)
 .
-.It Ev TZ
-Timezone to use for printing the dates.
+.It
+Category
+.
+.It
+Location
+.
+.It
+Summary
+.
+.It description
+description
 .
 .El
+.
+.Pp
+The
+.Sq \en
+and
+.Sq \et
+charaters may represent newlines and tabs.
 .
 .
 .Sh SEE ALSO
@@ -38,6 +60,7 @@ Timezone to use for printing the dates.
 .Xr cal 1 ,
 .Xr calendar 1 ,
 .Xr date 1
+.
 .
 .Sh STANDARDS
 .
@@ -51,4 +74,4 @@ Timezone to use for printing the dates.
 .
 .Sh AUTHORS
 .
-.An Josuah Demangeon Aq Mt mail@josuah.net
+.An Josuah Demangeon Aq Mt me@josuah.net

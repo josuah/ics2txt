@@ -1,0 +1,81 @@
+#!/usr/bin/awk -f
+
+function isleap(year)
+{
+	return (year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0)
+}
+
+function mdays(mon, year)
+{
+	return (mon == 2) ? (28 + isleap(year)) : (30 + (mon + (mon > 7)) % 2)
+}
+
+function timegm(year, mon, mday, hour, min, sec)
+{
+	while (--mon >= 1)
+		mday += mdays(mon, year)
+	while (--year >= 1970)
+		mday += 365 + isleap(year)
+	return (((((mday - 1) * 24) + hour) * 60) + min) * 60 + sec
+}
+
+function date_text(str, offset,
+	year, mon, mday, hour, min)
+{
+	year = substr(str,  1, 4)
+	mon  = substr(str,  6, 2)
+	mday = substr(str,  9, 2)
+	hour = substr(str, 12, 2)
+	min  = substr(str, 15, 2)
+	return timegm(year, mon, mday, hour, min, 0) - offset
+}
+
+{
+	gsub(/\t/, " ")
+}
+
+/^TZ[+-]/ {
+	hour = substr($0, 4, 2)
+	min = substr($0, 6, 2)
+	tzoffset = substr(zone, 3, 1) hour * 3600 + min * 60
+	next
+}
+
+/^[0-9]+-[0-9]+-[0-9]+ / {
+	time = date_text($1 " " $2, tzoffset)
+	row++
+}
+
+/^ / {
+	d = $0
+	sub(/^ */, "", d)
+	des = des " " d
+}
+
+/^$/ {
+	if (beg)
+		printf "%d\t%d\t%s\t%s\t%s\t%s\n", beg, end, cat, loc, sum, des
+	beg = end = cat = loc = sum = des = "" 
+}
+
+row == 1 {
+	beg = time
+	sum = $0
+	sub(/^[^ ]+ +[^ ]+ +/, "", sum)
+}
+
+row == 2 {
+	end = time
+
+	line = $0
+	sub(/^[^ ]+ +[^ ]+ +/, "", line)
+
+	cat = line
+	sub(/\].*/, "", cat)
+	sub(/^\[/, "", cat)
+
+	loc = line
+	sub(/[^]]*\] */, "", loc)
+
+	row = 0
+}
