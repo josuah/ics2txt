@@ -1,20 +1,20 @@
 .Dd $Mdocdate: Mar 1 2020$
-.Dt ICS2TXT 1
+.Dt TICAL 1
 .Os
 .
 .
 .Sh NAME
 .
-.Nm ics2txt
+.Nm tical
 .Nd convert ics file to simpler tsv or txt formats
 .
 .
 .Sh SYNOPSIS
 .
-.Nm ics2txt-tsv Ar <file.ics >file.tsv
-.Nm ics2txt-ics Ar <file.tsv >file.ics
-.Nm ics2txt-txt Ar <file.tsv >file.txt
-.Nm ics2txt-back Ar <file.txt >file.tsv
+.Nm tical-tsv Ar <file.ics >file.tsv
+.Nm tical-ics Ar <file.tsv >file.ics
+.Nm tical-txt Ar <file.tsv >file.txt
+.Nm tical-back Ar <file.txt >file.tsv
 .
 .Sh DESCRIPTION
 .
@@ -63,7 +63,7 @@ Convert a calendar from HTTP
 to custom
 .Pa .txt
 sorted by beginning:
-.Dl curl "$url.ics" | ics2txt-tsv | sort -n -k 1,1 | ics2txt-txt
+.Dl curl "$url.ics" | tical-tsv | sort -n -k 1,1 | tcal-txt
 .
 .Pp
 Convert a custom
@@ -71,14 +71,14 @@ Convert a custom
 format back to an
 .Pa .ics
 file and publish it:
-.Dl ics2txt-back cal.txt | ics2txt-ics | ssh "www@$host" 'cat >/var/www/cal.ics'
+.Dl tical-back cal.txt | tcal-ics | ssh "www@$host" 'cat >/var/www/cal.ics'
 .
 .Pp
 Split an
 .ics
 file according to the category, saved as
 .Pa .tsv :
-.Dl ics2txt-tsv cal.txt | awk -F '\et' '{ f = $3".tsv"; print >>f }'
+.Dl tical-tsv cal.txt | awk -F '\et' '{ f = $3".tsv"; print >>f }'
 .
 .
 .Sh SEE ALSO

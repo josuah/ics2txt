@@ -1,5 +1,6 @@
-BIN	= ics2txt-*
-MAN1	= ics2txt.1
+PREFIX	= /usr/local
+BIN	= tical-*
+MAN1	= tical.1
 
 all:
 
