@@ -4,10 +4,10 @@ NAME
      tical – convert ics file to simpler tsv or txt formats
 
 SYNOPSIS
-     tical-tsv <file.ics >file.tsv
-     tical-ics <file.tsv >file.ics
-     tical-txt <file.tsv >file.txt
-     tical-back <file.txt >file.tsv
+     ics2tsv <file.ics >file.tsv
+     tsv2tcal <file.tsv >file.txt
+     tcal2tsv <file.txt >file.tsv
+     tsv2ics <file.tsv >file.ics
 
 DESCRIPTION
      tical is set of awk scripts to deal with iCal (.ics) format to publish,

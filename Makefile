@@ -1,6 +1,6 @@
 PREFIX	= /usr/local
-BIN	= tical-*
-MAN1	= tical.1
+BIN	= ics2tsv tsv2tcal tcal2tsv tsv2ics ics2txt
+MAN1	= ics2tsv.1
 
 all:
 
