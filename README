@@ -1,16 +1,19 @@
-TICAL(1)                    General Commands Manual                   TICAL(1)
+ICS2TSV(1)                  General Commands Manual                 ICS2TSV(1)
 
 NAME
-     tical – convert ics file to simpler tsv or txt formats
+     ics2tsv – convert ics file to simpler tsv or txt formats
 
 SYNOPSIS
+     ics2txt <file.ics >file.txt
+
+     ics2txt <file.tsv >file.ics
      ics2tsv <file.ics >file.tsv
      tsv2tcal <file.tsv >file.txt
      tcal2tsv <file.txt >file.tsv
      tsv2ics <file.tsv >file.ics
 
 DESCRIPTION
-     tical is set of awk scripts to deal with iCal (.ics) format to publish,
+     ics2tsv is set of awk scripts to deal with iCal (.ics) format to publish,
      display and convert *.ics files, though a simple central TSV format.
 
      They all read from either stdin or the file passed as argument, and write
@@ -26,15 +29,15 @@ DESCRIPTION
       6. Description
 
 EXAMPLES
-     Convert a calendar from HTTP .ics to custom .txt sorted by beginning:
-           curl $url.ics | tical-tsv | sort -n -k 1,1 | tcal-txt
+     Convert a calendar from HTTP .ics to custom .txt sorted by beginning
+     date:
+           curl $url.ics | ics2tsv | sort -n -k 1,1 | tsv2txt
 
      Convert a custom .txt format back to an .ics file and publish it:
-           tical-back cal.txt | tcal-ics | ssh www@$host 'cat
-           >/var/www/cal.ics'
+           tcal2tsv cal.txt | tsv2ics | ssh www@$host 'cat >/var/www/cal.ics'
 
      Split an file according to the category, saved as .tsv:
-           tical-tsv cal.txt | awk -F '\t' '{ f = $3".tsv"; print >>f }'
+           tcal2tsv cal.txt | awk -F '\t' '{ f = $3".tsv"; print >>f }'
 
 SEE ALSO
      cal(1), calendar(1), date(1), sort(1)

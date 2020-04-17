@@ -1,16 +1,19 @@
 .Dd $Mdocdate: Mar 1 2020$
-.Dt ICS2TSV 1
+.Dt ICS2TXT 1
 .Os
 .
 .
 .Sh NAME
 .
-.Nm ics2tsv
+.Nm ics2txt
 .Nd convert ics file to simpler tsv or txt formats
 .
 .
 .Sh SYNOPSIS
 .
+.Nm ics2txt Ar <file.ics >file.txt
+.Pp
+.Nm ics2txt Ar <file.tsv >file.ics
 .Nm ics2tsv Ar <file.ics >file.tsv
 .Nm tsv2tcal Ar <file.tsv >file.txt
 .Nm tcal2tsv Ar <file.txt >file.tsv
@@ -23,6 +26,7 @@ is set of awk scripts to deal with iCal
 .Pq Pa .ics
 format to publish, display and convert *.ics files, though a simple
 central TSV format.
+.
 .Pp
 They all read from either stdin or the file passed as argument, and
 write to stdout.
@@ -34,25 +38,18 @@ files have one line per event, all with the following fields,
 separated by one tab:
 .
 .Bl -offset 1n -width 1n -enum -compact
-.
 .It
 Begining (epoch)
-.
 .It
 End (epoch)
-.
 .It
 Category
-.
 .It
 Location
-.
 .It
 Summary
-.
 .It
 Description
-.
 .El
 .
 .
@@ -87,6 +84,7 @@ file according to the category, saved as
 .Xr calendar 1 ,
 .Xr date 1 ,
 .Xr sort 1
+.
 .
 .Sh STANDARDS
 .

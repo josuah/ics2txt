@@ -1,6 +1,6 @@
 PREFIX	= /usr/local
 BIN	= ics2tsv tsv2tcal tcal2tsv tsv2ics ics2txt
-MAN1	= ics2tsv.1
+MAN1	= ics2txt.1
 
 all:
 
