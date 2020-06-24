@@ -10,24 +10,45 @@ function mdays(mon, year)
 	return (mon == 2) ? (28 + isleap(year)) : (30 + (mon + (mon > 7)) % 2)
 }
 
-function timegm(year, mon, mday, hour, min, sec)
+function maketime(tm,
+	sec, mon, day)
 {
-	while (--mon >= 1)
-		mday += mdays(mon, year)
-	while (--year >= 1970)
-		mday += 365 + isleap(year)
-	return (((((mday - 1) * 24) + hour) * 60) + min) * 60 + sec
+	sec = tm["sec"] + tm["min"] * 60 + tm["hour"] * 3600
+
+	day = tm["mday"] - 1
+
+	for (mon = tm["mon"] - 1; mon > 0; mon--)
+		day = day + mdays(mon, tm["year"])
+
+	# constants: x * 365 + x / 400 - x / 100 + x / 4
+	day = day + int(tm["year"] / 400) * 146097
+	day = day + int(tm["year"] % 400 / 100) * 36524
+	day = day + int(tm["year"] % 100 / 4) * 1461
+	day = day + int(tm["year"] % 4 / 1) * 365
+
+	return sec + (day - 719527) * 86400
 }
 
-function date_text(str, offset,
-	year, mon, mday, hour, min)
+function text_to_epoch(str, tz,
+	tm)
 {
-	year = substr(str,  1, 4)
-	mon  = substr(str,  6, 2)
-	mday = substr(str,  9, 2)
-	hour = substr(str, 12, 2)
-	min  = substr(str, 15, 2)
-	return timegm(year, mon, mday, hour, min, 0) - offset
+	tm["year"] = substr(str, 1, 4)
+	tm["mon"] = substr(str, 6, 2)
+	tm["mday"] = substr(str, 9, 2)
+	tm["hour"] = substr(str, 12, 2)
+	tm["min"] = substr(str, 15, 2)
+	return maketime(tm) - tz
+}
+
+BEGIN {
+	FIELDS = "beg end cat loc sum des"
+	fields["len"] = split(FIELDS, fields, " ")
+
+	for (i = 1; i <= fields["len"]; i++) {
+		pos[fields[i]] = i
+		printf("%s%s", (i > 1 ? "\t" : ""), fields[i])
+	}
+	printf("\n")
 }
 
 {
@@ -35,47 +56,30 @@ function date_text(str, offset,
 }
 
 /^TZ[+-]/ {
-	hour = substr($0, 4, 2)
-	min = substr($0, 6, 2)
-	tzoffset = substr(zone, 3, 1) hour * 3600 + min * 60
+	TZOFFSET = substr($1, 3, 1) substr($0, 4, 2)*3600 + substr($0, 6, 2)*60
+	while (getline && $0 ~ /^$/)
+		continue
+}
+
+/^[0-9]+-[0-9]+-[0-9]+/ {
+	if ("beg" in ev)
+		ev["end"] = text_to_epoch($0, TZOFFSET)
+	else
+		ev["beg"] = text_to_epoch($0, TZOFFSET)
 	next
 }
 
-/^[0-9]+-[0-9]+-[0-9]+ / {
-	time = date_text($1 " " $2, tzoffset)
-	row++
-}
-
 /^ / {
-	d = $0
-	sub(/^ */, "", d)
-	des = des " " d
+	tag = $1
+	sub("^ *[^ :]+: *", "")
+	sub(":$", "", tag)
+	ev[tag] = $0
+	next
 }
 
 /^$/ {
-	if (beg)
-		printf "%d\t%d\t%s\t%s\t%s\t%s\n", beg, end, cat, loc, sum, des
-	beg = end = cat = loc = sum = des = "" 
-}
-
-row == 1 {
-	beg = time
-	sum = $0
-	sub(/^[^ ]+ +[^ ]+ +/, "", sum)
-}
-
-row == 2 {
-	end = time
-
-	line = $0
-	sub(/^[^ ]+ +[^ ]+ +/, "", line)
-
-	cat = line
-	sub(/\].*/, "", cat)
-	sub(/^\[/, "", cat)
-
-	loc = line
-	sub(/[^]]*\] */, "", loc)
-
-	row = 0
+	for (i = 1; i <= fields["len"]; i++)
+		printf("%s%s", (i > 1 ? "\t" : ""), ev[fields[i]])
+	printf("\n")
+	delete ev
 }

@@ -10,28 +10,53 @@ function mdays(mon, year)
 	return (mon == 2) ? (28 + isleap(year)) : (30 + (mon + (mon > 7)) % 2)
 }
 
-function timegm(year, mon, mday, hour, min, sec)
+function maketime(tm,
+	sec, mon, day)
 {
-	while (--mon >= 1)
-		mday += mdays(mon, year)
-	while (--year >= 1970)
-		mday += 365 + isleap(year)
-	return (((((mday - 1) * 24) + hour) * 60) + min) * 60 + sec
+	sec = tm["sec"] + tm["min"] * 60 + tm["hour"] * 3600
+
+	day = tm["mday"] - 1
+
+	for (mon = tm["mon"] - 1; mon > 0; mon--)
+		day = day + mdays(mon, tm["year"])
+
+	# constants: x * 365 + x / 400 - x / 100 + x / 4
+	day = day + int(tm["year"] / 400) * 146097
+	day = day + int(tm["year"] % 400 / 100) * 36524
+	day = day + int(tm["year"] % 100 / 4) * 1461
+	day = day + int(tm["year"] % 4 / 1) * 365
+
+	return sec + (day - 719527) * 86400
 }
 
-function date_ical(str, offset,
-	year, mon, mday, hour, min)
+function ical_to_epoch(str, offset,
+	tm)
 {
-	year = substr(str,  1, 4)
-	mon  = substr(str,  5, 2)
-	mday = substr(str,  7, 2)
-	hour = substr(str, 10, 2)
-	min  = substr(str, 12, 2)
+	tm["year"] = substr(str,  1, 4)
+	tm["mon"]  = substr(str,  5, 2)
+	tm["mday"] = substr(str,  7, 2)
+	tm["hour"] = substr(str, 10, 2)
+	tm["min"]  = substr(str, 12, 2)
 	offset = (substr(str, 16, 1) == "Z" ? 0 : offset)
-	return timegm(year, mon, mday, hour, min, 0) - offset
+	return maketime(tm) - offset
+}
+
+function print_event(ev, fields,
+	i)
+{
+	for (i = 1; i <= fields["len"]; i++)
+		printf("%s%s", (i > 1 ? "\t" : ""), ev[fields[i]])
+	printf("\n")
 }
 
 BEGIN {
+	FIELDS = "DTSTART DTEND CATEGORIES LOCATION SUMMARY DESCRIPTION"
+	fields["len"] = split(FIELDS, fields, " ")
+
+	# by default: "CATEGORIES" -> "cat", "LOCATION" -> "loc"...
+	translate["DTSTART"] = "beg"
+	translate["DTEND"] = "end"
+
 	"date +%z" | getline offset_str
 	close("date +%z")
 	hour = substr($0, 4, 2)
@@ -39,26 +64,33 @@ BEGIN {
 	tzoffset = substr(zone, 3, 1) hour * 3600 + min * 60
 
 	FS = "[:;]"
+
+	for (i = 1; i <= fields["len"]; i++) {
+		if (!(s = translate[fields[i]]))
+			s = tolower(substr(fields[i], 1, 3))
+		printf("%s%s", (i > 1 ? "\t" : ""), s)
+	}
+
+	printf("\n")
 }
 
 {
-	gsub("\r", ""); gsub("\t", "\\\\t")
-	gsub("^ *", ""); gsub(" *$", "")
+	gsub("\r", "")
+	gsub("\t", "\\\\t")
+	gsub("^ *", "")
+	gsub(" *$", "")
 
 	if (match($0, "^ ")) {
-		event[type] = event[type] substr($0, 2, length($0) - 1)
+		ev[type] = ev[type] substr($0, 2, length($0) - 1)
 	} else {
 		type = $1
 		i = index($0, ":")
-		event[type] = substr($0, i + 1, length($0) - i)
+		ev[type] = substr($0, i + 1, length($0) - i)
 	}
+}
 
-	if ($0 ~ /^END:VEVENT/)
-		printf("%d\t%d\t%s\t%s\t%s\t%s\n",
-		  date_ical(event["DTSTART"], offset),
-		  date_ical(event["DTEND"], offset),
-		  event["CATEGORIES"],
-		  event["LOCATION"],
-		  event["SUMMARY"],
-		  event["DESCRIPTION"])
+/^END:VEVENT/ {
+	ev["DTSTART"] = ical_to_epoch(ev["DTSTART"], offset)
+	ev["DTEND"] = ical_to_epoch(ev["DTEND"], offset)
+	print_event(ev, fields)
 }

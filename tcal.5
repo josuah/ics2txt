@@ -6,52 +6,57 @@
 .Sh NAME
 .
 .Nm tcal
-.Nd plaintext calendar event notation format
-.
-.
-.Sh SYNOPSIS
-.
-TZ+0300
+.Nd plaintext calendar for editing by hand on the go
 .
 .
 .Sh DESCRIPTION
 .
-The
-.Nm
-utility
+The first line contain
+.Dq TZ+HHMM
+with
+.Dq +HHMM
+as returned by
+.D1 $ date +%z .
 .
+.Pp
+Then empty line delimited event entries follow, with for each:
+One line with the start date, one line with the end date,
+formatted like:
+.Dq %Y-%m-%d %H:%M
 .
-.
-.Sh FILES
-.
+.Pp
+Then one line per attribute, each formatted with:
+optional space, attribute name, colon,
+optional space, and attribute content,
+end of line.
 .
 .
 .Sh EXAMPLES
 .
+.Bd -literal
+TZ+0200
+
+2020-06-28 00:00
+2020-06-05 00:00
+ loc: 950-0994, Chuo Ward, Niigata, Japan
+ sum: summer holidays
+
+2020-06-29 13:30
+2020-06-29 15:00
+ loc: online, irc.freenode.net, #bitreich-en
+ sum: bitreich irc invitation
+ des: at this moment like all other moment, everyone invited on IRC
+
+.Ed
 .
 .
 .Sh SEE ALSO
 .
-.Xr foobar 1
-.
-.
-.Sh STANDARDS
-.
-.
-.
-.Sh HISTORY
-.
+.Xr cal 1 ,
+.Xr calendar 1
 .
 .
 .Sh AUTHORS
 .
-.An <author-name>
-.Aq Mt <author-email>
-.
-.
-.Sh CAVEATS
-.
-.
-.
-.Sh BUGS
-.
+.An Josuah Demangeon
+.Aq Mt me@josuah.net
