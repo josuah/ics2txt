@@ -15,9 +15,9 @@ install:
 	mkdir -p ${DESTDIR}$(PREFIX)/bin
 	cp $(BIN) ${DESTDIR}$(PREFIX)/bin
 	mkdir -p ${DESTDIR}$(MANPREFIX)/man1
-	cp *.1 ${DESTDIR}$(MANPREFIX)/man1
+	cp doc/*.1 ${DESTDIR}$(MANPREFIX)/man1
 
 dist: clean
 	mkdir -p ${NAME}-${VERSION}
-	cp -r README Makefile doc src ${BIN:=.c} ${NAME}-${VERSION}
+	cp -r README Makefile doc ${BIN} ${NAME}-${VERSION}
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz
