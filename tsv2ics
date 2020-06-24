@@ -60,29 +60,42 @@ function print_fold(prefix, s, n)
 }
 
 BEGIN {
+	FS = "\t"
+
 	print "BEGIN:VCALENDAR"
 	print "VERSION:2.0"
 	print "CALSCALE:GREGORIAN"
 	print "METHOD:PUBLISH"
 }
 
+NR == 1 {
+	for (i = 1; i <= NF; i++)
+		name[i] = $i
+	next
+}
+
 {
-	split($0, a, "\t")
-	gmtime(a[1] + offset, beg)
-	gmtime(a[2] + offset, end)
-	cat = a[3]; loc = a[4]; sum = a[5]; des = a[6]
+	for (i = 1; i <= NF; i++)
+		ev[name[i]] = $i
 
 	print ""
 	print "BEGIN:VEVENT"
+
+	gmtime(ev["beg"] + offset, ev)
 	printf "DTSTART:%04d%02d%02dT%02d%02d00Z\n",
-	  beg["year"], beg["mon"], beg["mday"], beg["hour"], beg["min"]
+	  ev["year"], ev["mon"], ev["mday"], ev["hour"], ev["min"]
+
+	gmtime(ev["end"] + offset, ev)
 	printf "DTEND:%04d%02d%02dT%02d%02d00Z\n",
-	  end["year"], end["mon"], end["mday"], end["hour"], end["min"]
-	print "SUMMARY:"	sum
-	print "DESCRIPTION:"	des
-	print "CATEGORIES:"	cat
-	print "LOCATION:"	loc
+	  ev["year"], ev["mon"], ev["mday"], ev["hour"], ev["min"]
+
+	print "SUMMARY:" ev["sum"]
+	print "DESCRIPTION:" ev["des"]
+	print "CATEGORIES:" ev["cat"]
+	print "LOCATION:" ev["loc"]
 	print "END:VEVENT"
+
+	delete ev
 }
 
 END {
