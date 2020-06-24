@@ -34,21 +34,21 @@ write to stdout.
 .Pp
 .The
 .Pa file.tsv
-files have one line per event, all with the following fields,
-separated by one tab:
+have one line per event, with the first line declaring fields order
+and presence, among:
 .
-.Bl -offset 1n -width 1n -enum -compact
-.It
-Begining (epoch)
-.It
-End (epoch)
-.It
+.Bl -tag -width xxxxx -offset 1n -compact
+.It Dq beg
+Begining of event (epoch)
+.It Dq end
+End of event (epoch)
+.It Dq cat
 Category
-.It
+.It Dq loc
 Location
-.It
+.It Dq sum
 Summary
-.It
+.It Dq des
 Description
 .El
 .
@@ -59,7 +59,7 @@ Convert a calendar from HTTP
 .Pa .ics
 to custom
 .Pa .txt
-sorted by beginning date:
+sorted by start date:
 .Dl curl "$url.ics" | ics2tsv | sort -n -k 1,1 | tsv2txt
 .
 .Pp
@@ -75,7 +75,12 @@ Split an
 .ics
 file according to the category, saved as
 .Pa .tsv :
-.Dl tcal2tsv cal.txt | awk -F '\et' '{ f = $3".tsv"; print >>f }'
+.Bd -literal
+ics2tsv cal.txt | awk -F '\et' '
+	NR == 1 { for (i = 1; i <= NF; i++) F[$i] = i; next }
+	{ print >>($F["cat"]".tsv") }
+\'
+.Ed
 .
 .
 .Sh SEE ALSO
