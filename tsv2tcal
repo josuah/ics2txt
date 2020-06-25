@@ -43,13 +43,13 @@ function gmtime(sec, tm)
 function localtime(sec, tm,
 	tz, h, m)
 {
-	return gmtime(sec + TZOFFSET, tm)
+	return gmtime(sec + TZ, tm)
 }
 
 BEGIN {
 	"date +%z" | getline tz
 	close("date +%z")
-	TZOFFSET = substr(tz, 1, 1) substr(tz, 2, 2)*3600 + substr(tz, 4, 2)*60
+	TZ = substr(tz, 1, 1) substr(tz, 2, 2)*3600 + substr(tz, 4, 2)*60
 
 	print("TZ" tz)
 

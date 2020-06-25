@@ -1,7 +1,5 @@
-ICS2TSV(1)                  General Commands Manual                 ICS2TSV(1)
-
 NAME
-     ics2tsv – convert ics file to simpler tsv or txt formats
+     ics2txt – convert ics file to simpler tsv or txt formats
 
 SYNOPSIS
      ics2txt <file.ics >file.txt
@@ -13,31 +11,34 @@ SYNOPSIS
      tsv2ics <file.tsv >file.ics
 
 DESCRIPTION
-     ics2tsv is set of awk scripts to deal with iCal (.ics) format to publish,
+     ics2txt is set of awk scripts to deal with iCal (.ics) format to publish,
      display and convert *.ics files, though a simple central TSV format.
 
      They all read from either stdin or the file passed as argument, and write
      to stdout.
 
-     file.tsv files have one line per event, all with the following fields,
-     separated by one tab:
-      1. Begining (epoch)
-      2. End (epoch)
-      3. Category
-      4. Location
-      5. Summary
-      6. Description
+     file.tsv have one line per event, with the first line declaring fields
+     order and presence, among:
+      “beg”  Begining of event (epoch)
+      “end”  End of event (epoch)
+      “cat”  Category
+      “loc”  Location
+      “sum”  Summary
+      “des”  Description
 
 EXAMPLES
-     Convert a calendar from HTTP .ics to custom .txt sorted by beginning
-     date:
+     Convert a calendar from HTTP .ics to custom .txt sorted by start date:
            curl $url.ics | ics2tsv | sort -n -k 1,1 | tsv2txt
 
      Convert a custom .txt format back to an .ics file and publish it:
            tcal2tsv cal.txt | tsv2ics | ssh www@$host 'cat >/var/www/cal.ics'
 
      Split an file according to the category, saved as .tsv:
-           tcal2tsv cal.txt | awk -F '\t' '{ f = $3".tsv"; print >>f }'
+
+     ics2tsv cal.txt | awk -F '\t' '
+             NR == 1 { for (i = 1; i <= NF; i++) F[$i] = i; next }
+             { print >>($F["cat"]".tsv") }
+     ´
 
 SEE ALSO
      cal(1), calendar(1), date(1), sort(1)
@@ -48,5 +49,3 @@ STANDARDS
 
 AUTHORS
      Josuah Demangeon <me@josuah.net>
-
-OpenBSD 6.6                      March 1, 2020                     OpenBSD 6.6
