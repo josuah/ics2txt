@@ -64,30 +64,33 @@ function ical_parse_line(str, content, params,
 	return 0
 }
 
+function ical_set_tz(tzid)
+{
+	gsub("'", "", tzid)
+	cmd = "TZ='" tzid "' exec date +%z" 
+	cmd | getline tzid
+	close(cmd)
+	TZ = substr(tzid, 1, 1) substr(tzid, 2, 2)*3600 + substr(tzid, 4, 2)*60
+}
+
 function ical_to_epoch(content, param,
 	tz, cmd)
 {
-	tz = (param["TZID"] ? param["TZID"] : vcalendar["TZID"])
-	gsub("'", "", tz)
-
-	cmd = "TZ='"tz"' date +%z" 
-	cmd | getline tz
-	close(cmd)
-
-	tz = substr(tz, 1, 1) substr(tz, 2, 2)*3600 + substr(tz, 4, 2)*60
+	if (param["TZID"])
+		ical_set_tz(param["TZID"])
 
 	tm["year"] = substr(content["value"], 1, 4)
 	tm["mon"] = substr(content["value"], 5, 2)
-	tm["mday"] = substr(content["value"], 8, 2)
-	tm["hour"] = substr(content["value"], 12, 2)
-	tm["min"] = substr(content["value"], 15, 2)
-	tm["sec"] = substr(content["value"], 18, 2)
+	tm["mday"] = substr(content["value"], 7, 2)
+	tm["hour"] = substr(content["value"], 10, 2)
+	tm["min"] = substr(content["value"], 12, 2)
+	tm["sec"] = substr(content["value"], 14, 2)
 
-	return timegm(tm) + tz
+	return timegm(tm) + TZ
 }
 
 BEGIN {
-	split("DTSTART DTEND CATEGORIES LOCATION SUMMARY DESCRIPTION",
+	split("DTSTART DTEND CATEGORIES LOCATION SUMMARY DESCRIPTION URL",
 	  FIELDS, " ")
 	DT["DTSTART"] = DT["DTEND"] = DT["DUE"] = 1
 
@@ -123,7 +126,7 @@ sub("^ ", "") {
 		next
 
 	if (content["name"] == "TZID") {
-		vcalendar[content["name"]] = content["value"]
+		ical_set_tzid(content["value"])
 	} else if (DT[content["name"]]) {
 		vevent[content["name"]] = ical_to_epoch(content, params)
 	} else {
