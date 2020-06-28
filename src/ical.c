@@ -130,9 +130,15 @@ err:
 }
 
 static void
-ical_free_vnode_value(void *v)
+ical_free_value_void(void *v)
 {
 	ical_free_value(v);
+}
+
+static void
+ical_free_vnode_void(void *v)
+{
+	ical_free_vnode(v);
 }
 
 void
@@ -141,8 +147,8 @@ ical_free_vnode(struct ical_vnode *node)
 	if (node == NULL)
 		return;
 	debug("free vnode %p %s", node, node->name);
-	map_free(&node->values, ical_free_vnode_value);
-	ical_free_vnode(node->child);
+	map_free(&node->values, ical_free_value_void);
+	map_free(&node->child, ical_free_vnode_void);
 	ical_free_vnode(node->next);
 	free(node);
 }
@@ -190,12 +196,14 @@ ical_begin_vnode(struct ical_vcalendar *vcal, char const *name)
 		goto err;
 	if (vcal->root == NULL) {
 		vcal->root = new;
-		vcal->current = new;
 	} else {
-		new->next = vcal->current->child;
-		vcal->current->child = new;
-		vcal->current = new;
+		new->next = map_get(&vcal->current->child, new->name);
+		if (map_set(&vcal->current->child, new->name, new) < 0) {
+			e = -ICAL_ERR_SYSTEM;
+			goto err;
+		}
 	}
+	vcal->current = new;
 	return 0;
 err:
 	ical_free_vnode(new);
