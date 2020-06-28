@@ -10,7 +10,8 @@ strlcpy(char *buf, char const *str, size_t sz)
 {
 	size_t len, cpy;
 
-	cpy = ((len = strlen(str)) > sz) ? (sz) : (len);
+	len = strlen(str);
+	cpy = (len > sz) ? (sz) : (len);
 	memcpy(buf, str, cpy + 1);
 	buf[sz - 1] = '\0';
 	return len;
@@ -54,7 +55,7 @@ strappend(char **base_p, char const *s)
 	size_t base_len, s_len;
 	void *v;
 
-	base_len = strlen(*base_p);
+	base_len = (*base_p == NULL) ? (0) : (strlen(*base_p));
 	s_len = strlen(s);
 
 	if ((v = realloc(*base_p, base_len + s_len + 1)) == NULL)

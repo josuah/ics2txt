@@ -17,7 +17,7 @@ struct ical_contentline {
 };
 
 /** src/ical.c **/
-int ical_read_line(char **line, size_t *sz, FILE *fp);
+int ical_read_line(char **line, char **ln, size_t *sz, FILE *fp);
 int ical_parse_contentline(struct ical_contentline *contentline, char *line);
 void ical_init_contentline(struct ical_contentline *contentline);
 void ical_free_contentline(struct ical_contentline *contentline);

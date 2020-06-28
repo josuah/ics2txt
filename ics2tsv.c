@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ical.h"
 #include "log.h"
@@ -8,17 +9,19 @@ int
 print_ical_to_tsv(FILE *fp)
 {
 	struct ical_contentline contentline;
-	char *line = NULL;
+	char *line = NULL, *ln = NULL;
 	size_t sz = 0;
 	ssize_t r;
 
 	ical_init_contentline(&contentline);
 
-	while ((r = ical_read_line(&line, &sz, fp)) > 0) {
+	while ((r = ical_read_line(&line, &ln, &sz, fp)) > 0) {
 		debug("readling line \"%s\"", line);
 		if (ical_parse_contentline(&contentline, line) < 0)
 			die("parsing line \"%s\"", line);
 	}
+	free(line);
+	free(ln);
 	return r;
 }
 

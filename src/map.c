@@ -87,6 +87,12 @@ map_del(struct map *map, char *key)
 }
 
 void
+map_init(struct map *map)
+{
+	memset(map, 0, sizeof(*map));
+}
+
+void
 map_free_values(struct map *map)
 {
 	for (size_t i = 0; i < map->len; i++)
