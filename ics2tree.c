@@ -7,12 +7,18 @@
 #include "util.h"
 
 void
+print_ruler(int level)
+{
+	for (int i = 0; i < level; i++)
+		fprintf(stdout, ": ");
+}
+
+void
 print_ical_tree_param(struct map_entry *entry, int level)
 {
 	if (entry == NULL)
 		return;
-	for (int i = 0; i < level; i++)
-		printf(": ");
+	print_ruler(level);
 	fprintf(stdout, "param %s=%s\n", entry->key, (char *)entry->value);
 }
 
@@ -21,8 +27,7 @@ print_ical_tree_value(struct ical_value *value, int level)
 {
 	if (value == NULL)
 		return;
-	for (int i = 0; i < level; i++)
-		printf(": ");
+	print_ruler(level);
 	fprintf(stdout, "value %s:%s\n", value->name, value->value);
 	for (size_t i = 0; i < value->param.len; i++)
 		print_ical_tree_param(value->param.entry + i, level + 1);
@@ -34,12 +39,13 @@ print_ical_tree_vnode(struct ical_vnode *node, int level)
 {
 	if (node == NULL)
 		return;
-	for (int i = 0; i < level; i++)
-		printf(": ");
-	fprintf(stdout, "node %p %s child=%p next=%p\n", node, node->name, node->child, node->next);
+	print_ruler(level);
+	fprintf(stdout, "node %p %s child=%lu next=%p\n",
+	  (void *)node, node->name, node->child.len, (void *)node->next);
 	for (size_t i = 0; i < node->values.len; i++)
 		print_ical_tree_value(node->values.entry[i].value, level + 1);
-	print_ical_tree_vnode(node->child, level + 1);
+	for (size_t i = 0; i < node->child.len; i++)
+		print_ical_tree_vnode(node->child.entry[i].value, level + 1);
 	print_ical_tree_vnode(node->next, level);
 }
 
@@ -53,31 +59,16 @@ print_ical_tree(FILE *fp)
 		die("reading ical file: %s", ical_strerror(e));
 
 	print_ical_tree_vnode(vcal.root, 0);
-	fprintf(stdout, ".\n");
+	fprintf(stdout, ": end\n");
 	fflush(stdout);
 
 	ical_free_vcalendar(&vcal);
 	return 0;
 }
 
-void
-print_header(void)
-{
-	char *fields[] = { "", NULL };
-
-	printf("%s\t%s", "beg", "end");
-
-	for (char **f = fields; *f != NULL; f++) {
-		fprintf(stdout, "\t%s", *f);
-	}
-	fprintf(stdout, "\n");
-}
-
 int
 main(int argc, char **argv)
 {
-	print_header();
-
 	log_arg0 = *argv++;
 
 	if (*argv == NULL) {

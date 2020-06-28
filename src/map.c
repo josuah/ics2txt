@@ -50,9 +50,8 @@ map_set(struct map *map, char *key, void *value)
 	map->len++;
 
 	insert = map->entry + i;
-	e = map->entry + map->len - 1 - 1;
-	for (; e >= insert; e--)
-		e[1].key = e[0].key;
+	for (e = map->entry + map->len - 2; e >= insert; e--)
+		e[1] = e[0];
 
 	insert->key = key;
 	insert->value = value;
