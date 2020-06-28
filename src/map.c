@@ -54,8 +54,7 @@ map_set(struct map *map, char *key, void *value)
 	for (; e >= insert; e--)
 		e[1].key = e[0].key;
 
-	if ((insert->key = strdup(key)) == NULL)
-		return -1;
+	insert->key = key;
 	insert->value = value;
 
 	return 0;
@@ -90,16 +89,19 @@ map_init(struct map *map)
 }
 
 void
-map_free_values(struct map *map)
+map_free_keys(struct map *map)
 {
 	for (size_t i = 0; i < map->len; i++)
-		free(map->entry[map->len - 1].value);
+		free(map->entry[i].key);
 }
 
 void
-map_free(struct map *map)
+map_free(struct map *map, void (*fn)(void *))
 {
-	for (size_t i = 0; i < map->len; i++)
-		free(map->entry[map->len - 1].key);
+	if (fn != NULL) {
+		for (size_t i = 0; i < map->len; i++)
+			fn(map->entry[i].value);
+	}
 	free(map->entry);
+	map->len = 0;
 }

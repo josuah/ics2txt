@@ -9,8 +9,10 @@
 
 #include "util.h"
 
+enum ical_err ical_errno;
+
 int
-ical_read_line(char **line, char **ln, size_t *sz, FILE *fp)
+ical_getline(char **line, char **ln, size_t *sz, FILE *fp)
 {
 	int c;
 	void *v;
@@ -35,113 +37,240 @@ ical_read_line(char **line, char **ln, size_t *sz, FILE *fp)
 	return 1;
 }
 
-int
-ical_parse_contentline(struct ical_contentline *cl, char *line)
+char *
+ical_strerror(int i)
 {
-	char *column, *equal, *param, *cp;
-	size_t sz;
-	int e = errno;
+	enum ical_err err = (i > 0) ? i : -i;
 
-	if ((column = strchr(line, ':')) == NULL)
-		return -1;
-	*column = '\0';
-	if ((cl->value = strdup(column + 1)) == NULL)
-		return -1;
-
-	if ((cp = strchr(line, ';')) != NULL)
-		cp++;
-	while ((param = strsep(&cp, ";")) != NULL) {
-		if ((equal = strchr(param, '=')) == NULL)
-			return -1;
-		*equal = '\0';
-		if (map_set(&cl->param, param, equal + 1) < 0)
-			return -1;
+	switch (err) {
+	case ICAL_ERR_OK:
+		return "no error";
+	case ICAL_ERR_SYSTEM:
+		return "system error";
+	case ICAL_ERR_END_MISMATCH:
+		return "END: does not match its corresponding BEGIN:";
+	case ICAL_ERR_MISSING_BEGIN:
+		return "unexpected content line before any BEGIN:";
+	case ICAL_ERR_MIN_NESTED:
+		return "too many END: for the number of BEGIN:";
+	case ICAL_ERR_MAX_NESTED:
+		return "maximum nesting level reached";
+	case ICAL_ERR_LENGTH:
+		assert(!"used internally, should not happen");
 	}
-
-	sz = sizeof cl->name;
-	if (strlcpy(cl->name, line, sz) >= sz)
-		return errno=EMSGSIZE, -1;
-
-	assert(errno == e);
-	return 0;
+	assert(!"unknown error code");
+	return "not a valid ical error code";
 }
 
-int
-ical_parse_tzid(struct ical_value *value, struct ical_contentline *cl)
+struct ical_value *
+ical_new_value(char const *line)
 {
-	return 0;
-}
+	struct ical_value *new;
+	size_t len;
 
-int
-ical_parse_date(struct ical_value *value, struct ical_contentline *cl)
-{
-	return 0;
-}
-
-int
-ical_parse_attribute(struct ical_value *value, struct ical_contentline *cl)
-{
-	return 0;
-}
-
-int
-ical_begin_vnode(struct ical_vcalendar *vcal, char const *name)
-{
-	if (strcasecmp(name, "VCALENDAR"))
-		return 0;
-	return -1;
-}
-
-int
-ical_end_vnode(struct ical_vcalendar *vcal, char const *name)
-{
-	if (strcasecmp(name, "VCALENDAR"))
-		return 0;
-	return -1;
-}
-
-int
-ical_add_contentline(struct ical_vcalendar *vcal, struct ical_contentline *cl)
-{
-	struct ical_value value_buf, *value = &value_buf;
-	int i;
-	struct {
-		char *name;
-		enum ical_value_type type;
-		int (*fn)(struct ical_value *, struct ical_contentline *);
-	} map[] = {
-		{ "DTSTART", ICAL_VALUE_TIME,      ical_parse_date },
-		{ "DTEND",   ICAL_VALUE_TIME,      ical_parse_date },
-		{ "TZID",    ICAL_VALUE_TIME,      ical_parse_tzid },
-		{ NULL,      ICAL_VALUE_ATTRIBUTE, ical_parse_attribute },
-	};
-
-	if (strcasecmp(cl->name, "BEGIN") == 0)
-		return ical_begin_vnode(vcal, cl->value);
-
-	if (strcasecmp(cl->name, "END") == 0)
-		return ical_end_vnode(vcal, cl->value);
-
-	memset(value, 0, sizeof *value);
-
-	for (i = 0; map[i].name == NULL; i++)
-		if (strcasecmp(cl->name, map[i].name) == 0)
-			break;
-	value->type = map[i].type;
-	if (map[i].fn(value, cl) < 0)
-		return -1;
-	return 0;
+	len = strlen(line);
+	if ((new = calloc(1, sizeof *new + len + 1)) == NULL)
+		return NULL;
+	memcpy(new->buf, line, len + 1);
+	return new;
 }
 
 void
 ical_free_value(struct ical_value *value)
 {
-	;
+	debug("free value %p (%s:%s)", value, value->name, value->value);
+	map_free(&value->param, free);
+	free(value);
+}
+
+int
+ical_parse_value(struct ical_value *value)
+{
+	char *column, *equal, *param, *cp;
+	int e = errno;
+
+	value->name = value->buf;
+
+	if ((column = strchr(value->buf, ':')) == NULL)
+		return -1;
+	*column = '\0';
+	value->value = column + 1;
+
+	if ((cp = strchr(value->buf, ';')) != NULL)
+		*cp++ = '\0';
+	while ((param = strsep(&cp, ";")) != NULL) {
+		if ((equal = strchr(param, '=')) == NULL)
+			return -1;
+		*equal = '\0';
+		if (map_set(&value->param, param, equal + 1) < 0)
+			return -1;
+	}
+
+	assert(errno == e);
+	return 0;
+}
+
+struct ical_vnode *
+ical_new_vnode(char const *name)
+{
+	struct ical_vnode *new;
+	size_t sz;
+
+	if ((new = calloc(1, sizeof *new)) == NULL)
+		return NULL;
+	sz = sizeof new->name;
+	if (strlcpy(new->name, name, sz) >= sz) {
+		errno = EMSGSIZE;
+		goto err;
+	}
+	return new;
+err:
+	ical_free_vnode(new);
+	return NULL;
+}
+
+static void
+ical_free_vnode_value(void *v)
+{
+	ical_free_value(v);
 }
 
 void
-ical_free_contentline(struct ical_contentline *cl)
+ical_free_vnode(struct ical_vnode *node)
 {
-	map_free(&cl->param);
-	free(cl->value);
+	if (node == NULL)
+		return;
+	debug("free vnode %p %s", node, node->name);
+	map_free(&node->values, ical_free_vnode_value);
+	ical_free_vnode(node->child);
+	ical_free_vnode(node->next);
+	free(node);
+}
+
+int
+ical_push_nested(struct ical_vcalendar *vcal, struct ical_vnode *new)
+{
+	struct ical_vnode **node;
+
+	node = vcal->nested;
+	for (int i = 0; *node != NULL; node++, i++) {
+		if (i >= ICAL_NESTED_MAX)
+			return -ICAL_ERR_MAX_NESTED;
+	}
+	node[0] = new;
+	node[1] = NULL;
+	return 0;
+}
+
+struct ical_vnode *
+ical_pop_nested(struct ical_vcalendar *vcal)
+{
+	struct ical_vnode **node, **prev = vcal->nested, *old;
+
+	for (prev = node = vcal->nested; *node != NULL; node++) {
+		vcal->current = *prev;
+		prev = node;
+		old = *node;
+	}
+	*prev = NULL;
+	if (vcal->nested[0] == NULL)
+		vcal->current = NULL;
+	return old;
+}
+
+int
+ical_begin_vnode(struct ical_vcalendar *vcal, char const *name)
+{
+	struct ical_vnode *new;
+	int e;
+
+	if ((new = ical_new_vnode(name)) == NULL)
+		return -ICAL_ERR_SYSTEM;
+	if ((e = ical_push_nested(vcal, new)) < 0)
+		goto err;
+	if (vcal->root == NULL) {
+		vcal->root = new;
+		vcal->current = new;
+	} else {
+		new->next = vcal->current->child;
+		vcal->current->child = new;
+		vcal->current = new;
+	}
+	return 0;
+err:
+	ical_free_vnode(new);
+	return e;
+}
+
+int
+ical_end_vnode(struct ical_vcalendar *vcal, char const *name)
+{
+	struct ical_vnode *old;
+
+	if ((old = ical_pop_nested(vcal)) == NULL)
+		return -ICAL_ERR_MIN_NESTED;
+	if (strcasecmp(name, old->name) != 0)
+		return -ICAL_ERR_END_MISMATCH;
+	return 0;
+}
+
+int
+ical_push_value(struct ical_vcalendar *vcal, struct ical_value *new)
+{
+	if (strcasecmp(new->name, "BEGIN") == 0) {
+		int e = ical_begin_vnode(vcal, new->value);
+		ical_free_value(new);
+		return e;
+	}
+	if (strcasecmp(new->name, "END") == 0) {
+		int e = ical_end_vnode(vcal, new->value);
+		ical_free_value(new);
+		return e;
+	}
+
+	if (vcal->current == NULL)
+		return -ICAL_ERR_MISSING_BEGIN;
+
+	debug("new %p %s:%s", new, new->name, new->value);
+	new->next = map_get(&vcal->current->values, new->name);
+	if (map_set(&vcal->current->values, new->name, new) < 0)
+		return -ICAL_ERR_SYSTEM;
+
+	return 0;
+}
+
+int
+ical_read_vcalendar(struct ical_vcalendar *vcal, FILE *fp)
+{
+	char *line = NULL, *ln = NULL;
+	size_t sz = 0;
+	ssize_t r;
+	int e;
+
+	memset(vcal, 0, sizeof *vcal);
+
+	while ((r = ical_getline(&line, &ln, &sz, fp)) > 0) {
+		struct ical_value *new;
+
+		if ((new = ical_new_value(line)) == NULL) {
+			e = -ICAL_ERR_SYSTEM;
+			goto err;
+		}
+		if ((e = ical_parse_value(new)) < 0)
+			goto err;
+		if ((e = ical_push_value(vcal, new)) < 0)
+			goto err;
+	}
+	e = (r == 0) ? 0 : -ICAL_ERR_SYSTEM;
+err:
+	free(line);
+	free(ln);
+	return e;
+}
+
+void
+ical_free_vcalendar(struct ical_vcalendar *vcal)
+{
+	debug("free vcalendar");
+	ical_free_vnode(vcal->root);
 }

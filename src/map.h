@@ -18,7 +18,7 @@ void * map_get(struct map *map, char *key);
 int map_set(struct map *map, char *key, void *value);
 int map_del(struct map *map, char *key);
 void map_init(struct map *map);
-void map_free_values(struct map *map);
-void map_free(struct map *map);
+void map_free_keys(struct map *map);
+void map_free(struct map *map, void (*fn)(void *));
 
 #endif

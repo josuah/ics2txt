@@ -7,23 +7,16 @@
 #include "util.h"
 
 int
-print_ical_to_tsv(FILE *fp)
+print_ical_tsv(FILE *fp)
 {
-	struct ical_contentline cl;
-	char *line = NULL, *ln = NULL;
-	size_t sz = 0;
-	ssize_t r;
+	struct ical_vcalendar vcal;
+	int e;
 
-	memset(&cl, 0, sizeof cl);
+	if ((e = ical_read_vcalendar(&vcal, fp)) < 0)
+		die("reading ical file: %s", ical_strerror(e));
 
-	while ((r = ical_read_line(&line, &ln, &sz, fp)) > 0) {
-		debug("readling line \"%s\"", line);
-		if (ical_parse_contentline(&cl, line) < 0)
-			die("parsing line \"%s\"", line);
-	}
-	free(line);
-	free(ln);
-	return r;
+	ical_free_vcalendar(&vcal);
+	return 0;
 }
 
 void
@@ -47,7 +40,7 @@ main(int argc, char **argv)
 	log_arg0 = *argv++;
 
 	if (*argv == NULL) {
-		if (print_ical_to_tsv(stdin) < 0)
+		if (print_ical_tsv(stdin) < 0)
 			die("converting stdin");
 	}
 
@@ -57,7 +50,7 @@ main(int argc, char **argv)
 		info("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
 			die("opening %s", *argv);
-		if (print_ical_to_tsv(fp) < 0)
+		if (print_ical_tsv(fp) < 0)
 			die("converting %s", *argv);
 		fclose(fp);
 	}
