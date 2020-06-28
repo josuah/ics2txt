@@ -86,8 +86,7 @@ ical_new_value(char const *line)
 void
 ical_free_value(struct ical_value *value)
 {
-	debug("free value %p (%s:%s)", value, value->name, value->value);
-	map_free(&value->param, free);
+	map_free(&value->param, NULL);
 	free(value);
 }
 
@@ -154,9 +153,8 @@ ical_free_vnode(struct ical_vnode *node)
 {
 	if (node == NULL)
 		return;
-	debug("free vnode %p %s", node, node->name);
 	map_free(&node->values, ical_free_value_void);
-	map_free(&node->child, ical_free_vnode_void);
+	map_free(&node->childs, ical_free_vnode_void);
 	ical_free_vnode(node->next);
 	free(node);
 }
@@ -205,8 +203,8 @@ ical_begin_vnode(struct ical_vcalendar *vcal, char const *name)
 	if (vcal->root == NULL) {
 		vcal->root = new;
 	} else {
-		new->next = map_get(&vcal->current->child, new->name);
-		if (map_set(&vcal->current->child, new->name, new) < 0) {
+		new->next = map_get(&vcal->current->childs, new->name);
+		if (map_set(&vcal->current->childs, new->name, new) < 0) {
 			e = -ICAL_ERR_SYSTEM;
 			goto err;
 		}
@@ -247,7 +245,6 @@ ical_push_value(struct ical_vcalendar *vcal, struct ical_value *new)
 	if (vcal->current == NULL)
 		return -ICAL_ERR_MISSING_BEGIN;
 
-	debug("new %p %s:%s", new, new->name, new->value);
 	new->next = map_get(&vcal->current->values, new->name);
 	if (map_set(&vcal->current->values, new->name, new) < 0)
 		return -ICAL_ERR_SYSTEM;
@@ -287,6 +284,5 @@ err:
 void
 ical_free_vcalendar(struct ical_vcalendar *vcal)
 {
-	debug("free vcalendar");
 	ical_free_vnode(vcal->root);
 }

@@ -35,9 +35,8 @@ struct ical_vcalendar {
 
 struct ical_vnode {
 	char name[32];
-	time_t beg, end;
 	struct map values; /*(struct ical_value *)*/
-	struct map child; /*(struct ical_vnode *)*/
+	struct map childs; /*(struct ical_vnode *)*/
 	struct ical_vnode *next;
 };
 

@@ -40,12 +40,11 @@ print_ical_tree_vnode(struct ical_vnode *node, int level)
 	if (node == NULL)
 		return;
 	print_ruler(level);
-	fprintf(stdout, "node %p %s child=%lu next=%p\n",
-	  (void *)node, node->name, node->child.len, (void *)node->next);
+	fprintf(stdout, "node %s\n", node->name);
 	for (size_t i = 0; i < node->values.len; i++)
 		print_ical_tree_value(node->values.entry[i].value, level + 1);
-	for (size_t i = 0; i < node->child.len; i++)
-		print_ical_tree_vnode(node->child.entry[i].value, level + 1);
+	for (size_t i = 0; i < node->childs.len; i++)
+		print_ical_tree_vnode(node->childs.entry[i].value, level + 1);
 	print_ical_tree_vnode(node->next, level);
 }
 
@@ -59,7 +58,7 @@ print_ical_tree(FILE *fp)
 		die("reading ical file: %s", ical_strerror(e));
 
 	print_ical_tree_vnode(vcal.root, 0);
-	fprintf(stdout, ": end\n");
+	fprintf(stdout, "end\n");
 	fflush(stdout);
 
 	ical_free_vcalendar(&vcal);
@@ -79,13 +78,12 @@ main(int argc, char **argv)
 	for (; *argv != NULL; argv++, argc--) {
 		FILE *fp;
 
-		info("converting \"%s\"", *argv);
+		debug("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
 			die("opening %s", *argv);
 		if (print_ical_tree(fp) < 0)
 			die("converting %s", *argv);
 		fclose(fp);
 	}
-
 	return 0;
 }
