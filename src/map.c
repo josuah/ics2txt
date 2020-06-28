@@ -32,11 +32,8 @@ map_set(struct map *map, char *key, void *value)
 	size_t i, sz;
 	void *v;
 
-	debug("%s: key=%s len=%zd", __func__, key, map->len);
-
 	for (i = 0; i < map->len; i++) {
 		int cmp = strcmp(key, map->entry[i].key);
-		debug("cmp(%s,%s)=%d", key, map->entry[i].key, cmp);
 
 		if (cmp == 0) {
 			map->entry[i].value = value;
