@@ -1,5 +1,5 @@
 NAME = ics2txt
-VERSION = 0.1
+VERSION = 0.2
 
 W = -Wall -Wextra -std=c99 --pedantic
 I = -Isrc
