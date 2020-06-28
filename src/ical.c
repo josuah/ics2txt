@@ -18,18 +18,20 @@ ical_getline(char **line, char **ln, size_t *sz, FILE *fp)
 	void *v;
 
 	if ((v = realloc(*line, 1)) == NULL)
-		return -1;
+		return -ICAL_ERR_SYSTEM;
 	*line = v;
 	(*line)[0] = '\0';
 
-	do {
+	do { top:
 		if (getline(ln, sz, fp) <= 0)
-			return ferror(fp) ? -1 : 0;
+			return ferror(fp) ? -ICAL_ERR_SYSTEM : 0;
 		strchomp(*ln);
+		if (**ln == '\0')
+			goto top;
 		if (strappend(line, *ln) < 0)
-			return -1;
+			return -ICAL_ERR_SYSTEM;
 		if ((c = fgetc(fp)) == EOF)
-			return ferror(fp) ? -1 : 1;
+			return ferror(fp) ? -ICAL_ERR_SYSTEM : 1;
 	} while (c == ' ');
 
 	ungetc(c, fp);
@@ -51,6 +53,12 @@ ical_strerror(int i)
 		return "END: does not match its corresponding BEGIN:";
 	case ICAL_ERR_MISSING_BEGIN:
 		return "unexpected content line before any BEGIN:";
+	case ICAL_ERR_MISSING_COLUMN:
+		return "missing ':' character from line";
+	case ICAL_ERR_MISSING_SEMICOLUMN:
+		return "missing ';' character before ':'";
+	case ICAL_ERR_MISSING_EQUAL:
+		return "missing '=' character in parameter before ':'";
 	case ICAL_ERR_MIN_NESTED:
 		return "too many END: for the number of BEGIN:";
 	case ICAL_ERR_MAX_NESTED:
@@ -92,7 +100,7 @@ ical_parse_value(struct ical_value *value)
 	value->name = value->buf;
 
 	if ((column = strchr(value->buf, ':')) == NULL)
-		return -1;
+		return -ICAL_ERR_MISSING_COLUMN;
 	*column = '\0';
 	value->value = column + 1;
 
@@ -100,10 +108,10 @@ ical_parse_value(struct ical_value *value)
 		*cp++ = '\0';
 	while ((param = strsep(&cp, ";")) != NULL) {
 		if ((equal = strchr(param, '=')) == NULL)
-			return -1;
+			return -ICAL_ERR_MISSING_EQUAL;
 		*equal = '\0';
 		if (map_set(&value->param, param, equal + 1) < 0)
-			return -1;
+			return -ICAL_ERR_SYSTEM;
 	}
 
 	assert(errno == e);
