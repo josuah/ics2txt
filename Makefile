@@ -11,7 +11,7 @@ MANPREFIX = ${PREFIX}/man
 SRC = src/ical.c src/map.c src/util.c src/log.c
 HDR = src/ical.h src/map.h src/util.h src/log.h
 OBJ = ${SRC:.c=.o}
-BIN = ics2tsv ics2tree
+BIN = ics2tree
 
 all: ${BIN}
 
