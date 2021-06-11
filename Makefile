@@ -2,16 +2,17 @@ NAME = ics2txt
 VERSION = 0.2
 
 W = -Wall -Wextra -std=c99 --pedantic
-I = -Isrc
 D = -D_POSIX_C_SOURCE=200811L -DVERSION='"${VERSION}"'
-CFLAGS = $I $D $W -g
+CFLAGS = $D $W -g
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/man
 
-SRC = src/ical.c src/map.c src/util.c src/log.c
-HDR = src/ical.h src/map.h src/util.h src/log.h
+SRC = ical.c map.c util.c log.c
+HDR = ical.h map.h util.h log.h
 OBJ = ${SRC:.c=.o}
 BIN = ics2tree
+MAN1 = ics2txt.1
+MAN5 = tcal.5
 
 all: ${BIN}
 
@@ -23,15 +24,17 @@ ${BIN}: ${OBJ} ${BIN:=.o}
 	${CC} ${LDFLAGS} -o $@ $@.o ${OBJ}
 
 clean:
-	rm -rf *.o */*.o ${BIN} ${NAME}-${VERSION} *.gz
+	rm -rf *.o ${BIN} ${NAME}-${VERSION} *.gz
 
 install:
 	mkdir -p ${DESTDIR}$(PREFIX)/bin
 	cp bin/* $(BIN) ${DESTDIR}$(PREFIX)/bin
 	mkdir -p ${DESTDIR}$(MANPREFIX)/man1
-	cp doc/*.1 ${DESTDIR}$(MANPREFIX)/man1
+	cp ${MAN1} ${DESTDIR}$(MANPREFIX)/man1
+	mkdir -p ${DESTDIR}$(MANPREFIX)/man5
+	cp ${MAN5} ${DESTDIR}$(MANPREFIX)/man5
 
 dist: clean
 	mkdir -p ${NAME}-${VERSION}
-	cp -r README Makefile doc bin ${SRC} ${NAME}-${VERSION}
+	cp -r README Makefile bin ${SRC} ${NAME}-${VERSION}
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz

@@ -1,3 +1,4 @@
 *.o
-ics2tsv
-ics2tree
+/ics2tsv
+/ics2tree
+/ics2txt-[0-9]*

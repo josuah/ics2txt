@@ -1,51 +1,18 @@
-NAME
-     ics2txt – convert ics file to simpler tsv or txt formats
+ics2txt
+=======
+Set of tools to work with the popular iCalendar format and converting to even
+simpler TSV and text forms.
 
-SYNOPSIS
-     ics2txt <file.ics >file.txt
+The current implementation uses [awk](//josuah.net/wiki/awk/) scripts, but a
+rather complete implementation of iCalendar, without memory leak or crash, is
+already there, and used for the `ics2tree` linting tool.
 
-     ics2txt <file.tsv >file.ics
-     ics2tsv <file.ics >file.tsv
-     tsv2tcal <file.tsv >file.txt
-     tcal2tsv <file.txt >file.tsv
-     tsv2ics <file.tsv >file.ics
+Plans include to have an `ics2json` tool for a 1:1 mapping of iCalendar, and
+have `ics2tsv` a more general-purpose tool with user-chosen column fields.
 
-DESCRIPTION
-     ics2txt is set of awk scripts to deal with iCal (.ics) format to publish,
-     display and convert *.ics files, though a simple central TSV format.
+So far, Awk-based parsing have been tested with the following input formats
+(sample account created for testing):
 
-     They all read from either stdin or the file passed as argument, and write
-     to stdout.
-
-     file.tsv have one line per event, with the first line declaring fields
-     order and presence, among:
-      “beg”  Begining of event (epoch)
-      “end”  End of event (epoch)
-      “cat”  Category
-      “loc”  Location
-      “sum”  Summary
-      “des”  Description
-
-EXAMPLES
-     Convert a calendar from HTTP .ics to custom .txt sorted by start date:
-           curl $url.ics | ics2tsv | sort -n -k 1,1 | tsv2txt
-
-     Convert a custom .txt format back to an .ics file and publish it:
-           tcal2tsv cal.txt | tsv2ics | ssh www@$host 'cat >/var/www/cal.ics'
-
-     Split an file according to the category, saved as .tsv:
-
-     ics2tsv cal.txt | awk -F '\t' '
-             NR == 1 { for (i = 1; i <= NF; i++) F[$i] = i; next }
-             { print >>($F["cat"]".tsv") }
-     ´
-
-SEE ALSO
-     cal(1), calendar(1), date(1), sort(1)
-
-STANDARDS
-     Desruisseaux, Internet Calendaring and Scheduling Core Object
-     Specification (iCalendar), RFC 5545, September 2009.
-
-AUTHORS
-     Josuah Demangeon <me@josuah.net>
+* Zoom meetings generated events
+* FOSDEM events, like <https://fosdem.org/2020/schedule/ical>
+* Google Calendar
