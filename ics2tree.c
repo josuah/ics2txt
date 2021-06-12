@@ -3,76 +3,63 @@
 #include <string.h>
 
 #include "ical.h"
-#include "log.h"
 #include "util.h"
 
-void
+static void
 print_ruler(int level)
 {
-	for (int i = 0; i < level; i++)
+	while (level-- > 0)
 		fprintf(stdout, ": ");
 }
 
-void
-print_ical_tree_param(struct map_entry *entry, int level)
+static int
+fn_entry_name(IcalParser *p, char *name)
 {
-	if (entry == NULL)
-		return;
-	print_ruler(level);
-	fprintf(stdout, "param %s=%s\n", entry->key, (char *)entry->value);
+	print_ruler(p->level);
+	printf("name %s\n", name);
+	return 0;
 }
 
-void
-print_ical_tree_value(struct ical_value *value, int level)
+static int
+fn_block_begin(IcalParser *p, char *name)
 {
-	if (value == NULL)
-		return;
-	print_ruler(level);
-	fprintf(stdout, "value %s:%s\n", value->name, value->value);
-	for (size_t i = 0; i < value->param.len; i++)
-		print_ical_tree_param(value->param.entry + i, level + 1);
-	print_ical_tree_value(value->next, level);
+	print_ruler(p->level);
+	printf("begin %s\n", name);
+	return 0;
 }
 
-void
-print_ical_tree_vnode(struct ical_vnode *node, int level)
+static int
+fn_param_value(IcalParser *p, char *name, char *value)
 {
-	if (node == NULL)
-		return;
-	print_ruler(level);
-	fprintf(stdout, "node %s\n", node->name);
-	for (size_t i = 0; i < node->values.len; i++)
-		print_ical_tree_value(node->values.entry[i].value, level + 1);
-	for (size_t i = 0; i < node->childs.len; i++)
-		print_ical_tree_vnode(node->childs.entry[i].value, level + 1);
-	print_ical_tree_vnode(node->next, level);
+	print_ruler(p->level + 1);
+	printf("param %s=%s\n", name, value);
+	return 0;
 }
 
-int
-print_ical_tree(FILE *fp)
+static int
+fn_entry_value(IcalParser *p, char *name, char *value)
 {
-	struct ical_vcalendar vcal;
-	int e;
+	(void)name;
 
-	if ((e = ical_read_vcalendar(&vcal, fp)) < 0)
-		die("reading ical file: %s", ical_strerror(e));
-
-	print_ical_tree_vnode(vcal.root, 0);
-	fprintf(stdout, "end\n");
-	fflush(stdout);
-
-	ical_free_vcalendar(&vcal);
+	print_ruler(p->level + 1);
+	printf("value %s\n", value);
 	return 0;
 }
 
 int
 main(int argc, char **argv)
 {
-	log_arg0 = *argv++;
+	IcalParser p = {0};
+	arg0 = *argv++;
+
+	p.fn_entry_name = fn_entry_name;
+	p.fn_block_begin = fn_block_begin;
+	p.fn_param_value = fn_param_value;
+	p.fn_entry_value = fn_entry_value;
 
 	if (*argv == NULL) {
-		if (print_ical_tree(stdin) < 0)
-			die("converting stdin");
+		if (ical_parse(&p, stdin) < 0)
+			err("parsing stdin:%d %s", p.line, p.errmsg);
 	}
 
 	for (; *argv != NULL; argv++, argc--) {
@@ -80,9 +67,9 @@ main(int argc, char **argv)
 
 		debug("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
-			die("opening %s", *argv);
-		if (print_ical_tree(fp) < 0)
-			die("converting %s", *argv);
+			err("opening %s", *argv);
+		if (ical_parse(&p, fp) < 0)
+			err("parsing %s:%d: %s", *argv, p.line, p.errmsg);
 		fclose(fp);
 	}
 	return 0;

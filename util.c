@@ -4,6 +4,59 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+char *arg0;
+
+/* logging */
+
+static void
+_log(char const *tag, char const *fmt, va_list va)
+{
+	if (arg0 != NULL)
+		fprintf(stderr, "%s: ", arg0);
+	fprintf(stderr, "%s: ", tag);
+	vfprintf(stderr, fmt, va);
+	if (errno != 0)
+		fprintf(stderr, ": %s", strerror(errno));
+	fprintf(stderr, "\n");
+	fflush(stderr);
+}
+
+void
+err(char const *fmt, ...)
+{
+	va_list va;
+
+	va_start(va, fmt);
+	_log("error", fmt, va);
+	exit(1);
+}
+
+void
+warn(char const *fmt, ...)
+{
+	va_list va;
+
+	va_start(va, fmt);
+	_log("warning", fmt, va);
+}
+
+void
+debug(char const *fmt, ...)
+{
+	static int verbose = -1;
+	va_list va;
+
+	if (verbose < 0)
+		verbose = (getenv("DEBUG") == NULL);
+	if (!verbose)
+		return;
+	va_start(va, fmt);
+	_log("debug", fmt, va);
+}
+
+/* strings */
 
 size_t
 strlcpy(char *buf, char const *str, size_t sz)
@@ -18,21 +71,20 @@ strlcpy(char *buf, char const *str, size_t sz)
 }
 
 char *
-strsep(char **str_p, char const *sep)
+strsep(char **sp, char const *sep)
 {
 	char *s, *prev;
 
-	if (*str_p == NULL)
+	if (*sp == NULL)
 		return NULL;
-
-	for (s = prev = *str_p; strchr(sep, *s) == NULL; s++)
+	prev = *sp;
+	for (s = *sp; strchr(sep, *s) == NULL; s++)
 		continue;
-
 	if (*s == '\0') {
-		*str_p = NULL;
+		*sp = NULL;
 	} else {
+		*sp = s + 1;
 		*s = '\0';
-		*str_p = s + 1;
 	}
 	return prev;
 }
@@ -44,27 +96,29 @@ strchomp(char *line)
 
 	len = strlen(line);
 	if (len > 0 && line[len - 1] == '\n')
-		line[len-- - 1] = '\0';
+		line[--len] = '\0';
 	if (len > 0 && line[len - 1] == '\r')
-		line[len-- - 1] = '\0';
+		line[--len] = '\0';
 }
 
 int
-strappend(char **base_p, char const *s)
+strappend(char **dstp, char const *src)
 {
-	size_t base_len, s_len;
-	void *v;
+	size_t dstlen, srclen;
+	void *mem;
 
-	base_len = (*base_p == NULL) ? (0) : (strlen(*base_p));
-	s_len = strlen(s);
+	dstlen = (*dstp == NULL) ? 0 : strlen(*dstp);
+	srclen = strlen(src);
 
-	if ((v = realloc(*base_p, base_len + s_len + 1)) == NULL)
+	if ((mem = realloc(*dstp, dstlen + srclen + 1)) == NULL)
 		return -1;
+	*dstp = mem;
 
-	*base_p = v;
-	memcpy(*base_p + base_len, s, s_len + 1);
+	memcpy(*dstp + dstlen, src, srclen + 1);
 	return 0;
 }
+
+/* memory */
 
 void *
 reallocarray(void *buf, size_t len, size_t sz)
