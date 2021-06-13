@@ -5,20 +5,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 char *arg0;
 
-/* logging */
+/** logging **/
 
 static void
-_log(char const *tag, char const *fmt, va_list va)
+_log(char const *fmt, va_list va)
 {
 	if (arg0 != NULL)
 		fprintf(stderr, "%s: ", arg0);
-	fprintf(stderr, "%s: ", tag);
 	vfprintf(stderr, fmt, va);
-	if (errno != 0)
-		fprintf(stderr, ": %s", strerror(errno));
 	fprintf(stderr, "\n");
 	fflush(stderr);
 }
@@ -29,7 +27,7 @@ err(char const *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-	_log("error", fmt, va);
+	_log( fmt, va);
 	exit(1);
 }
 
@@ -39,7 +37,7 @@ warn(char const *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-	_log("warning", fmt, va);
+	_log(fmt, va);
 }
 
 void
@@ -53,21 +51,32 @@ debug(char const *fmt, ...)
 	if (!verbose)
 		return;
 	va_start(va, fmt);
-	_log("debug", fmt, va);
+	_log(fmt, va);
 }
 
-/* strings */
+/** strings **/
 
 size_t
-strlcpy(char *buf, char const *str, size_t sz)
+strlcpy(char *d, char const *s, size_t sz)
 {
 	size_t len, cpy;
 
-	len = strlen(str);
+	len = strlen(s);
 	cpy = (len > sz) ? (sz) : (len);
-	memcpy(buf, str, cpy + 1);
-	buf[sz - 1] = '\0';
+	memcpy(d, s, cpy + 1);
+	d[sz - 1] = '\0';
 	return len;
+}
+
+size_t
+strlcat(char *d, char const *s, size_t dsz)
+{
+	size_t dlen;
+
+	dlen = strlen(d);
+	if (dlen >= dsz)
+		return dlen + strlen(s);
+	return dlen + strlcpy(d + dlen, s, dsz - dlen);
 }
 
 char *
@@ -102,28 +111,52 @@ strchomp(char *line)
 }
 
 int
-strappend(char **dstp, char const *src)
+strappend(char **dp, char const *s)
 {
-	size_t dstlen, srclen;
+	size_t dlen, slen;
 	void *mem;
 
-	dstlen = (*dstp == NULL) ? 0 : strlen(*dstp);
-	srclen = strlen(src);
+	dlen = (*dp == NULL) ? 0 : strlen(*dp);
+	slen = strlen(s);
 
-	if ((mem = realloc(*dstp, dstlen + srclen + 1)) == NULL)
+	if ((mem = realloc(*dp, dlen + slen + 1)) == NULL)
 		return -1;
-	*dstp = mem;
+	*dp = mem;
 
-	memcpy(*dstp + dstlen, src, srclen + 1);
+	memcpy(*dp + dlen, s, slen + 1);
 	return 0;
 }
 
-/* memory */
+/** memory **/
 
 void *
-reallocarray(void *buf, size_t len, size_t sz)
+reallocarray(void *mem, size_t n, size_t sz)
 {
-	if (SIZE_MAX / len < sz)
+	if (SIZE_MAX / n < sz)
 		return errno=ERANGE, NULL;
-	return realloc(buf, len * sz);
+	return realloc(mem, n * sz);
+}
+
+/** time **/
+
+time_t
+tztime(struct tm *tm, char const *tz)
+{
+	char *env, old[32];
+	time_t t;
+
+	env = getenv("TZ");
+	if (strlcpy(old, env ? env : "", sizeof old) >= sizeof old)
+		return -1;
+	if (setenv("TZ", tz, 1) < 0)
+		return -1;
+
+	tzset();
+	t = mktime(tm);
+
+	if (env == NULL)
+		unsetenv("TZ");
+	else if (setenv("TZ", old, 1) < 0)
+		return -1;
+	return t;
 }
