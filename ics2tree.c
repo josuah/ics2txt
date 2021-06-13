@@ -55,7 +55,7 @@ fn_entry_value(IcalParser *p, char *name, char *value)
 
 		if (ical_get_time(p, value, &t) != 0)
 			warn("%s: %s", p->errmsg, value);
-		printf("epoch %ld\n", t);
+		printf("epoch %lld\n", t);
 	} else {	
 		printf("value %s\n", value);
 	}
