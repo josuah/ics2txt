@@ -50,13 +50,15 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
 	    (p->current && p->current->tzid[0] != '\0') ? p->current->tzid :
 	    "";
 
+#define N(i, x) ((s[i] - '0') * x)
+
 	/* date */
 	for (int i = 0; i < 8; i++)
 		if (!isdigit(s[i]))
 			return ical_error(p, "invalid date format");
-	tm.tm_year = s[0] * 1000 + s[1] * 100 + s[2] * 10 + s[3];
-	tm.tm_mon = s[4] * 10 + s[5] - 1;
-	tm.tm_mday = s[6] * 10 + s[7];
+	tm.tm_year = N(0,1000) + N(1,100) + N(2,10) + N(3,1) - 1900;
+	tm.tm_mon = N(4,10) + N(5,1) - 1;
+	tm.tm_mday = N(6,10) + N(7,1);
 	s += 8;
 
 	if (*s == 'T') {
@@ -65,9 +67,9 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
 		for (int i = 0; i < 6; i++)
 			if (!isdigit(s[i]))
 				return ical_error(p, "invalid time format");
-		tm.tm_hour = s[0] * 10 + s[1];
-		tm.tm_min = s[2] * 10 + s[3];
-		tm.tm_sec = s[4] * 10 + s[5];
+		tm.tm_hour = N(0,10) + N(1,1);
+		tm.tm_min = N(2,10) + N(3,1);
+		tm.tm_sec = N(4,10) + N(5,1);
 		if (s[6] == 'Z')
 			tzid = "UTC";
 	}
