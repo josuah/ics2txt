@@ -39,8 +39,11 @@ fn_param_value(IcalParser *p, char *name, char *value)
 static int
 fn_entry_value(IcalParser *p, char *name, char *value)
 {
+	size_t len;
 	(void)name;
 
+	if (ical_get_value(p, value, &len) < 0)
+		return -1;
 	print_ruler(p->level + 1);
 	printf("value %s\n", value);
 	return 0;
@@ -59,7 +62,7 @@ main(int argc, char **argv)
 
 	if (*argv == NULL) {
 		if (ical_parse(&p, stdin) < 0)
-			err("parsing stdin:%d %s", p.line, p.errmsg);
+			err("parsing stdin:%d: %s", p.line, p.errmsg);
 	}
 
 	for (; *argv != NULL; argv++, argc--) {

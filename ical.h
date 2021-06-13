@@ -15,7 +15,7 @@ struct IcalParser {
 	int (*fn_block_end)(IcalParser *, char *);
 	/* if returning non-zero then halt the parser */
 
-	int	 base64encoded;
+	int	 base64;
 	char const *errmsg;
 	size_t	 line;
 
@@ -24,8 +24,9 @@ struct IcalParser {
 	char	 stack[1024];
 };
 
-int	 ical_parse(IcalParser *, FILE *);
-//TODO: char	*ical_get_time(char *);
-//TODO: char	*ical_get_value(IcalCtx *, char *);
+int	ical_parse(IcalParser *, FILE *);
+int	ical_get_time(IcalParser *, char *, time_t *);
+int	ical_get_value(IcalParser *, char *, size_t *);
+int	ical_error(IcalParser *, char const *);
 
 #endif

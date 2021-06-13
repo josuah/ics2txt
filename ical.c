@@ -9,11 +9,28 @@
 #include <strings.h>
 
 #include "util.h"
+#include "base64.h"
 
-static int
+int
 ical_error(IcalParser *p, char const *msg)
 {
 	p->errmsg = msg;
+	return -1;
+}
+
+int
+ical_get_value(IcalParser *p, char *s, size_t *len)
+{
+	*len = strlen(s);
+	if (p->base64)
+		if (base64_decode(s, len, s, len) < 0)
+			return ical_error(p, "invalid base64 data");
+	return 0;
+}
+
+int
+ical_get_time(IcalParser *p, char *s, time_t *t)
+{
 	return -1;
 }
 
@@ -40,6 +57,8 @@ ical_parse_value(IcalParser *p, char **sp, char *name)
 	c = *s, *s = '\0';
 	if ((err = CALL(p, fn_param_value, name, val)) != 0)
 		return err;
+	if (strcasecmp(name, "ENCODING") == 0)
+		p->base64 = (strcasecmp(val, "BASE64") == 0);
 	*s = c;
 
 	*sp = s;
@@ -90,6 +109,7 @@ ical_parse_contentline(IcalParser *p, char *line)
 	*s = c;
 	end = s;
 
+	p->base64 = 0;
 	while (*s == ';') {
 		s++;
 		if ((err = ical_parse_param(p, &s)) != 0)

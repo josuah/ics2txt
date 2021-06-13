@@ -49,7 +49,7 @@ debug(char const *fmt, ...)
 	va_list va;
 
 	if (verbose < 0)
-		verbose = (getenv("DEBUG") == NULL);
+		verbose = (getenv("DEBUG") != NULL);
 	if (!verbose)
 		return;
 	va_start(va, fmt);

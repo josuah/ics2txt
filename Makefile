@@ -7,8 +7,8 @@ CFLAGS = $D $W -g
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/man
 
-SRC = ical.c util.c
-HDR = ical.h util.h
+SRC = ical.c base64.c util.c
+HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
 BIN = ics2tree
 MAN1 = ics2txt.1
