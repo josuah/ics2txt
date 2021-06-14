@@ -131,7 +131,6 @@ hook_block_begin(IcalParser *p, char *name)
 		return ical_error(p, "max recurion reached");
 	if (!Xstrlcpy(p->current->name, name))
 		return ical_error(p, "value too large");
-
 	return 0;
 }
 
@@ -143,7 +142,6 @@ hook_block_end(IcalParser *p, char *name)
 	p->current--;
 	if (p->current < p->stack)
 		return ical_error(p, "more END: than BEGIN:");
-
 	return 0;
 }
 
@@ -260,22 +258,25 @@ ical_parse(IcalParser *p, FILE *fp)
 
 	while (!feof(fp)) {
 		if ((contentline = realloc(contentline, 1)) == NULL)
-			return -1;
+			return ical_error(p, strerror(errno));
 		*contentline = '\0';
 
 		do {
 			do {
 				p->linenum++;
-				if (getline(&ln, &sz, fp) <= 0)
-					return -1;
+				if (getline(&ln, &sz, fp) <= 0) {
+					if (ferror(fp))
+						return ical_error(p, strerror(errno));
+					goto end;
+				}
 				strchomp(ln);
 			} while (*ln == '\0');
 
 			if (strappend(&contentline, ln) < 0)
-				return -1;
+				return ical_error(p, strerror(errno));
 			if ((c = fgetc(fp)) == EOF) {
 				if (ferror(fp))
-					return -1;
+					return ical_error(p, strerror(errno));
 				goto done;
 			}
 		} while (c == ' ');
@@ -285,6 +286,7 @@ done:
 		if ((err = ical_parse_contentline(p, contentline)) != 0)
 			break;
 	}
+end:
 	free(contentline);
 	free(ln);
 	return err;
