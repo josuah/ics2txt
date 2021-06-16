@@ -10,7 +10,7 @@ MANPREFIX = ${PREFIX}/man
 SRC = ical.c base64.c util.c
 HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
-BIN = ics2tree
+BIN = ics2tree ics2tsv
 MAN1 = ics2txt.1
 MAN5 = tcal.5
 

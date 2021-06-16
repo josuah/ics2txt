@@ -126,7 +126,7 @@ sub("^ ", "") {
 		next
 
 	if (content["name"] == "TZID") {
-		ical_set_tzid(content["value"])
+		ical_set_tz(content["value"])
 	} else if (DT[content["name"]]) {
 		vevent[content["name"]] = ical_to_epoch(content, params)
 	} else {

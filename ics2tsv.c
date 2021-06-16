@@ -6,37 +6,43 @@
 #include "ical.h"
 #include "util.h"
 
-static void
-print_ruler(int level)
-{
-	while (level-- > 0)
-		fprintf(stdout, ": ");
-}
+#define FIELDS_MAX 64
+
+typedef struct Event Event;
+
+struct Event {
+	time_t beg, end;
+	char *fields[FIELDS_MAX];
+};
+
+static char *fields_time[] = {
+	"DTSTART", "DTEND", "DTSTAMP", "DUE", "EXDATE", "RDATE"
+};
+
+static char *fields_default[] = {
+	"ATTENDEE", "CATEGORY", "DESCRIPTION", "LOCATION", "SUMMARY", "URL"
+};
+
+static char **fields = fields_default;
 
 static int
 fn_entry_name(IcalParser *p, char *name)
 {
-	print_ruler(ical_get_level(p));
 	printf("name %s\n", name);
-	fflush(stdout);
 	return 0;
 }
 
 static int
 fn_block_begin(IcalParser *p, char *name)
 {
-	print_ruler(ical_get_level(p) - 1);
 	printf("begin %s\n", name);
-	fflush(stdout);
 	return 0;
 }
 
 static int
 fn_param_value(IcalParser *p, char *name, char *value)
 {
-	print_ruler(ical_get_level(p) + 1);
 	printf("param %s=%s\n", name, value);
-	fflush(stdout);
 	return 0;
 }
 
@@ -48,18 +54,18 @@ fn_entry_value(IcalParser *p, char *name, char *value)
 
 	if (ical_get_value(p, value, &len) < 0)
 		return -1;
-	print_ruler(ical_get_level(p) + 1);
+
 	if (strcasecmp(name, "DTSTART") == 0 ||
             strcasecmp(name, "DTSTAMP") == 0 ||
 	    strcasecmp(name, "DTEND") == 0) {
-		time_t t;
+		time_t t = 0;
 		if (ical_get_time(p, value, &t) != 0)
 			warn("%s: %s", p->errmsg, value);
 		printf("epoch %lld\n", t);
 	} else {	
 		printf("value %s\n", value);
 	}
-	fflush(stdout);
+
 	return 0;
 }
 

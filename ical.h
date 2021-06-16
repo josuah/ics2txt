@@ -9,6 +9,15 @@
 typedef struct IcalParser IcalParser;
 typedef struct IcalStack IcalStack;
 
+typedef enum {
+	ICAL_BLOCK_VEVENT,
+	ICAL_BLOCK_VTODO,
+	ICAL_BLOCK_VJOURNAL,
+	ICAL_BLOCK_VFREEBUSY,
+	ICAL_BLOCK_VALARM,
+	ICAL_BLOCK_OTHER,
+} IcalBlock;
+
 struct IcalStack {
 	char	 name[32];
 	char	 tzid[32];
@@ -25,17 +34,19 @@ struct IcalParser {
 	/* if returning non-zero then halt the parser */
 
 	int	 base64;
-	char const *errmsg;
+	char	*errmsg;
 	size_t	 linenum;
 	char	*tzid;
-
+	IcalBlock block;
 	IcalStack stack[ICAL_STACK_SIZE], *current;
 };
 
-int	ical_parse(IcalParser *, FILE *);
-int	ical_get_level(IcalParser *);
-int	ical_get_time(IcalParser *, char *, time_t *);
-int	ical_get_value(IcalParser *, char *, size_t *);
-int	ical_error(IcalParser *, char const *);
+extern char *ical_block_name[ICAL_BLOCK_OTHER + 1];
+
+int	 ical_parse(IcalParser *, FILE *);
+int	 ical_get_level(IcalParser *);
+int	 ical_get_time(IcalParser *, char *, time_t *);
+int	 ical_get_value(IcalParser *, char *, size_t *);
+int	 ical_err(IcalParser *, char *);
 
 #endif

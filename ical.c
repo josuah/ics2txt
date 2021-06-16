@@ -11,14 +11,20 @@
 #include "util.h"
 #include "base64.h"
 
-#define Xstrlcpy(d, s) (strlcpy((d), (s), sizeof(d)) < sizeof(d))
-#define Xstrlcat(d, s) (strlcat((d), (s), sizeof(d)) < sizeof(d))
+char *ical_block_name[ICAL_BLOCK_OTHER + 1] = {
+	[ICAL_BLOCK_VEVENT]	= "VEVENT",
+	[ICAL_BLOCK_VTODO]	= "VTODO",
+	[ICAL_BLOCK_VJOURNAL]	= "VJOURNAL",
+	[ICAL_BLOCK_VFREEBUSY]	= "VFREEBUSY",
+	[ICAL_BLOCK_VALARM]	= "VALARM",
+	[ICAL_BLOCK_OTHER]	= NULL,
+};
 
-/* helpers: common utilities to call within the p->fn() callbacks as
- * well as in the code below */
+/* valuel helpers: common utilities to call within the p->fn()
+ * callbacks as well as in the code below */
 
 int
-ical_error(IcalParser *p, char const *msg)
+ical_err(IcalParser *p, char *msg)
 {
 	p->errmsg = msg;
 	return -1;
@@ -36,7 +42,7 @@ ical_get_value(IcalParser *p, char *s, size_t *len)
 	*len = strlen(s);
 	if (p->base64)
 		if (base64_decode(s, len, s, len) < 0)
-			return ical_error(p, "invalid base64 data");
+			return ical_err(p, "invalid base64 data");
 	return 0;
 }
 
@@ -55,7 +61,7 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
 	/* date */
 	for (int i = 0; i < 8; i++)
 		if (!isdigit(s[i]))
-			return ical_error(p, "invalid date format");
+			return ical_err(p, "invalid date format");
 	tm.tm_year = N(0,1000) + N(1,100) + N(2,10) + N(3,1) - 1900;
 	tm.tm_mon = N(4,10) + N(5,1) - 1;
 	tm.tm_mday = N(6,10) + N(7,1);
@@ -66,7 +72,7 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
 		s++;
 		for (int i = 0; i < 6; i++)
 			if (!isdigit(s[i]))
-				return ical_error(p, "invalid time format");
+				return ical_err(p, "invalid time format");
 		tm.tm_hour = N(0,10) + N(1,1);
 		tm.tm_min = N(2,10) + N(3,1);
 		tm.tm_sec = N(4,10) + N(5,1);
@@ -74,8 +80,10 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
 			tzid = "UTC";
 	}
 
+#undef N
+
 	if ((*t = tztime(&tm, tzid)) == (time_t)-1)
-		return ical_error(p, "could not convert time");
+		return ical_err(p, "could not convert time");
 
 	return 0;
 }
@@ -84,21 +92,21 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
  * processing time zones definition or prepare base64 decoding, and
  * permit to only have parsing code left to parsing functions */
 
-int
+static int
 hook_entry_name(IcalParser *p, char *name)
 {
 	(void)p; (void)name;
 	return 0;
 }
 
-int
+static int
 hook_param_name(IcalParser *p, char *name)
 {
 	(void)p; (void)name;
 	return 0;
 }
 
-int
+static int
 hook_param_value(IcalParser *p, char *name, char *value)
 {
 	if (strcasecmp(name, "ENCODING") == 0)
@@ -110,38 +118,53 @@ hook_param_value(IcalParser *p, char *name, char *value)
 	return 0;
 }
 
-int
+static int
 hook_entry_value(IcalParser *p, char *name, char *value)
 {
 	if (strcasecmp(name, "TZID") == 0)
-		if (!Xstrlcpy(p->current->tzid, value))
-			return ical_error(p, "TZID: name too large");
+		if (strlcpy(p->current->tzid, value, sizeof p->current->tzid) >=
+		    sizeof p->current->tzid)
+			return ical_err(p, "TZID: name too large");
 
 	p->tzid = NULL;
 
 	return 0;
 }
 
-int
+static int
 hook_block_begin(IcalParser *p, char *name)
 {
 	p->current++;
 	memset(p->current, 0, sizeof(*p->current));
 	if (ical_get_level(p) >= ICAL_STACK_SIZE)
-		return ical_error(p, "max recurion reached");
-	if (!Xstrlcpy(p->current->name, name))
-		return ical_error(p, "value too large");
+		return ical_err(p, "max recurion reached");
+	if (strlcpy(p->current->name, name, sizeof p->current->name) >=
+	    sizeof p->current->name)
+		return ical_err(p, "value too large");
+
+	for (int i = 0; ical_block_name[i] != NULL; i++) {
+		if (strcasecmp(ical_block_name[i], name) == 0) {
+			if (p->block != ICAL_BLOCK_OTHER)
+				return ical_err(p, "BEGIN:V* in BEGIN:V*");
+			p->block = i;
+		}
+	}
+
 	return 0;
 }
 
-int
+static int
 hook_block_end(IcalParser *p, char *name)
 {
 	if (strcasecmp(p->current->name, name) != 0)
-		return ical_error(p, "mismatching BEGIN: and END:");
+		return ical_err(p, "mismatching BEGIN: and END:");
 	p->current--;
 	if (p->current < p->stack)
-		return ical_error(p, "more END: than BEGIN:");
+		return ical_err(p, "more END: than BEGIN:");
+
+	if (ical_block_name[p->block] != NULL &&
+	    strcasecmp(ical_block_name[p->block], name) == 0)
+		p->block = ICAL_BLOCK_OTHER;
 	return 0;
 }
 
@@ -162,7 +185,7 @@ ical_parse_value(IcalParser *p, char **sp, char *name)
 		while (!iscntrl(*s) && *s != '"')
 			s++;
 		if (*s != '"')
-			return ical_error(p, "missing '\"'");
+			return ical_err(p, "missing '\"'");
 		*s++ = '\0';
 	} else {
 		val = s;
@@ -188,7 +211,7 @@ ical_parse_param(IcalParser *p, char **sp)
 	do {
 		for (name = s; isalnum(*s) || *s == '-'; s++);
 		if (s == name || (*s != '='))
-			return ical_error(p, "invalid parameter name");
+			return ical_err(p, "invalid parameter name");
 		*s++ = '\0';
 		if ((err = hook_param_name(p, name)) != 0 ||
 		    (err = CALL(p, fn_param_name, name)) != 0)
@@ -208,9 +231,12 @@ ical_parse_contentline(IcalParser *p, char *s)
 	int err;
 	char c, *name, *sep;
 
+	if (*s == '\0')
+		return 0;
+
 	for (name = s; isalnum(*s) || *s == '-'; s++);
 	if (s == name || (*s != ';' && *s != ':'))
-		return ical_error(p, "invalid entry name");
+		return ical_err(p, "invalid property name");
 	c = *s, *s = '\0';
 	if (strcasecmp(name, "BEGIN") != 0 && strcasecmp(name, "END") != 0)
 		if ((err = hook_entry_name(p, name)) != 0 ||
@@ -227,7 +253,7 @@ ical_parse_contentline(IcalParser *p, char *s)
 	}
 
 	if (*s != ':')
-		return ical_error(p, "expected ':' delimiter");
+		return ical_err(p, "expected ':' delimiter");
 	s++;
 
 	*sep = '\0';
@@ -247,47 +273,53 @@ ical_parse_contentline(IcalParser *p, char *s)
 	return 0;
 }
 
+static ssize_t
+ical_getline(char **contentline, char **line, size_t *sz, FILE *fp)
+{
+	size_t num = 0;
+	int c;
+
+	if ((*contentline = realloc(*contentline, 1)) == NULL)
+		return -1;
+	**contentline = '\0';
+
+	do {
+		if (getline(line, sz, fp) <= 0)
+			goto end;
+		num++;
+		strchomp(*line);
+
+		if (strappend(contentline, *line) < 0)
+			return -1;
+		if ((c = fgetc(fp)) == EOF)
+			goto end;
+	} while (c == ' ');
+	ungetc(c, fp);
+	assert(!ferror(fp));
+end:
+	return ferror(fp) ? -1 : num;
+}
+
 int
 ical_parse(IcalParser *p, FILE *fp)
 {
-	char *ln = NULL, *contentline = NULL;
+	char *line = NULL, *contentline = NULL;
 	size_t sz = 0;
-	int err, c;
+	ssize_t l;
+	int err;
 
 	p->current = p->stack;
+	p->linenum = 0;
+	p->block = ICAL_BLOCK_OTHER;
 
-	while (!feof(fp)) {
-		if ((contentline = realloc(contentline, 1)) == NULL)
-			return ical_error(p, strerror(errno));
-		*contentline = '\0';
-
-		do {
-			do {
-				p->linenum++;
-				if (getline(&ln, &sz, fp) <= 0) {
-					if (ferror(fp))
-						return ical_error(p, strerror(errno));
-					goto end;
-				}
-				strchomp(ln);
-			} while (*ln == '\0');
-
-			if (strappend(&contentline, ln) < 0)
-				return ical_error(p, strerror(errno));
-			if ((c = fgetc(fp)) == EOF) {
-				if (ferror(fp))
-					return ical_error(p, strerror(errno));
-				goto done;
-			}
-		} while (c == ' ');
-		ungetc(c, fp);
-done:
-		assert(!ferror(fp));
-		if ((err = ical_parse_contentline(p, contentline)) != 0)
+	do {
+		if ((l = ical_getline(&contentline, &line, &sz, fp)) < 0) {
+			err = ical_err(p, "readling line");
 			break;
-	}
-end:
+		}
+		p->linenum += l;
+	} while	(l > 0 && (err = ical_parse_contentline(p, contentline)) == 0);
 	free(contentline);
-	free(ln);
+	free(line);
 	return err;
 }
