@@ -93,7 +93,7 @@ ical_get_time(IcalParser *p, char *s, time_t *t)
  * permit to only have parsing code left to parsing functions */
 
 static int
-hook_entry_name(IcalParser *p, char *name)
+hook_field_name(IcalParser *p, char *name)
 {
 	(void)p; (void)name;
 	return 0;
@@ -119,7 +119,7 @@ hook_param_value(IcalParser *p, char *name, char *value)
 }
 
 static int
-hook_entry_value(IcalParser *p, char *name, char *value)
+hook_field_value(IcalParser *p, char *name, char *value)
 {
 	if (strcasecmp(name, "TZID") == 0)
 		if (strlcpy(p->current->tzid, value, sizeof p->current->tzid) >=
@@ -144,9 +144,9 @@ hook_block_begin(IcalParser *p, char *name)
 
 	for (int i = 0; ical_block_name[i] != NULL; i++) {
 		if (strcasecmp(ical_block_name[i], name) == 0) {
-			if (p->block != ICAL_BLOCK_OTHER)
+			if (p->blocktype != ICAL_BLOCK_OTHER)
 				return ical_err(p, "BEGIN:V* in BEGIN:V*");
-			p->block = i;
+			p->blocktype = i;
 		}
 	}
 
@@ -164,9 +164,9 @@ hook_block_end(IcalParser *p, char *name)
 	if (p->current < p->stack)
 		return ical_err(p, "more END: than BEGIN:");
 
-	if (ical_block_name[p->block] != NULL &&
-	    strcasecmp(ical_block_name[p->block], name) == 0)
-		p->block = ICAL_BLOCK_OTHER;
+	if (ical_block_name[p->blocktype] != NULL &&
+	    strcasecmp(ical_block_name[p->blocktype], name) == 0)
+		p->blocktype = ICAL_BLOCK_OTHER;
 	return 0;
 }
 
@@ -241,8 +241,8 @@ ical_parse_contentline(IcalParser *p, char *s)
 		return ical_err(p, "invalid property name");
 	c = *s, *s = '\0';
 	if (strcasecmp(name, "BEGIN") != 0 && strcasecmp(name, "END") != 0)
-		if ((err = hook_entry_name(p, name)) != 0 ||
-		    (err = CALL(p, fn_entry_name, name)) != 0)
+		if ((err = hook_field_name(p, name)) != 0 ||
+		    (err = CALL(p, fn_field_name, name)) != 0)
 			return err;
 	*s = c;
 	sep = s;
@@ -268,8 +268,8 @@ ical_parse_contentline(IcalParser *p, char *s)
 		    (err = CALL(p, fn_block_end, s)) != 0)
 			return err;
 	} else {
-		if ((err = hook_entry_value(p, name, s)) != 0 ||
-		    (err = CALL(p, fn_entry_value, name, s)) != 0)
+		if ((err = hook_field_value(p, name, s)) != 0 ||
+		    (err = CALL(p, fn_field_value, name, s)) != 0)
 			return err;
 	}
 	return 0;
@@ -312,7 +312,7 @@ ical_parse(IcalParser *p, FILE *fp)
 
 	p->current = p->stack;
 	p->linenum = 0;
-	p->block = ICAL_BLOCK_OTHER;
+	p->blocktype = ICAL_BLOCK_OTHER;
 
 	do {
 		if ((l = ical_getline(&contentline, &line, &sz, fp)) < 0) {

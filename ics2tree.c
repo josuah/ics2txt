@@ -14,7 +14,7 @@ print_ruler(int level)
 }
 
 static int
-fn_entry_name(IcalParser *p, char *name)
+fn_field_name(IcalParser *p, char *name)
 {
 	print_ruler(ical_get_level(p));
 	printf("name %s\n", name);
@@ -41,7 +41,7 @@ fn_param_value(IcalParser *p, char *name, char *value)
 }
 
 static int
-fn_entry_value(IcalParser *p, char *name, char *value)
+fn_field_value(IcalParser *p, char *name, char *value)
 {
 	size_t len;
 	(void)name;
@@ -69,10 +69,10 @@ main(int argc, char **argv)
 	IcalParser p = {0};
 	arg0 = *argv++;
 
-	p.fn_entry_name = fn_entry_name;
+	p.fn_field_name = fn_field_name;
 	p.fn_block_begin = fn_block_begin;
 	p.fn_param_value = fn_param_value;
-	p.fn_entry_value = fn_entry_value;
+	p.fn_field_value = fn_field_value;
 
 	if (*argv == NULL) {
 		if (ical_parse(&p, stdin) < 0)

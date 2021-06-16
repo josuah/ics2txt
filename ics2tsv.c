@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,25 +9,18 @@
 
 #define FIELDS_MAX 64
 
-typedef struct Event Event;
+typedef struct Field Field;
+typedef struct Block Block;
 
-struct Event {
+struct Block {
 	time_t beg, end;
 	char *fields[FIELDS_MAX];
 };
 
-static char *fields_time[] = {
-	"DTSTART", "DTEND", "DTSTAMP", "DUE", "EXDATE", "RDATE"
-};
-
-static char *fields_default[] = {
-	"ATTENDEE", "CATEGORY", "DESCRIPTION", "LOCATION", "SUMMARY", "URL"
-};
-
-static char **fields = fields_default;
+Block block;
 
 static int
-fn_entry_name(IcalParser *p, char *name)
+fn_field_name(IcalParser *p, char *name)
 {
 	printf("name %s\n", name);
 	return 0;
@@ -35,7 +29,14 @@ fn_entry_name(IcalParser *p, char *name)
 static int
 fn_block_begin(IcalParser *p, char *name)
 {
-	printf("begin %s\n", name);
+	debug("begin %s\n", name);
+	return 0;
+}
+
+static int
+fn_block_end(IcalParser *p, char *name)
+{
+	debug("end %s\n", name);
 	return 0;
 }
 
@@ -47,25 +48,26 @@ fn_param_value(IcalParser *p, char *name, char *value)
 }
 
 static int
-fn_entry_value(IcalParser *p, char *name, char *value)
+fn_field_value(IcalParser *p, char *name, char *value)
 {
-	size_t len;
-	(void)name;
+	static char *fieldmap[][2] = {
+		[ICAL_BLOCK_VEVENT]	= { "DTSTART",	"DTEND" },
+		[ICAL_BLOCK_VTODO]	= { NULL,	"DUE" },
+		[ICAL_BLOCK_VJOURNAL]	= { "DTSTAMP",	NULL },
+		[ICAL_BLOCK_VFREEBUSY]	= { "DTSTART",	"DTEND" },
+		[ICAL_BLOCK_VALARM]	= { "DTSTART",	NULL },
+		[ICAL_BLOCK_OTHER]	= { NULL,	NULL },
+	};
+	char *beg, *end;
 
-	if (ical_get_value(p, value, &len) < 0)
-		return -1;
-
-	if (strcasecmp(name, "DTSTART") == 0 ||
-            strcasecmp(name, "DTSTAMP") == 0 ||
-	    strcasecmp(name, "DTEND") == 0) {
-		time_t t = 0;
-		if (ical_get_time(p, value, &t) != 0)
-			warn("%s: %s", p->errmsg, value);
-		printf("epoch %lld\n", t);
-	} else {	
-		printf("value %s\n", value);
-	}
-
+	beg = fieldmap[p->blocktype][0];
+	if (beg != NULL && strcasecmp(name, beg) == 0)
+		if (ical_get_time(p, value, &block.beg) != 0)
+			return -1;
+	end = fieldmap[p->blocktype][1];
+	if (end != NULL && strcasecmp(name, end) == 0)
+		if (ical_get_time(p, value, &block.end) != 0)
+			return -1;
 	return 0;
 }
 
@@ -75,10 +77,11 @@ main(int argc, char **argv)
 	IcalParser p = {0};
 	arg0 = *argv++;
 
-	p.fn_entry_name = fn_entry_name;
+	p.fn_field_name = fn_field_name;
 	p.fn_block_begin = fn_block_begin;
+	p.fn_block_end = fn_block_end;
 	p.fn_param_value = fn_param_value;
-	p.fn_entry_value = fn_entry_value;
+	p.fn_field_value = fn_field_value;
 
 	if (*argv == NULL) {
 		if (ical_parse(&p, stdin) < 0)

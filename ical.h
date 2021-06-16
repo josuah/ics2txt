@@ -25,10 +25,10 @@ struct IcalStack {
 
 struct IcalParser {
 	/* function called while parsing in this order */
-	int (*fn_entry_name)(IcalParser *, char *);
+	int (*fn_field_name)(IcalParser *, char *);
 	int (*fn_param_name)(IcalParser *, char *);
 	int (*fn_param_value)(IcalParser *, char *, char *);
-	int (*fn_entry_value)(IcalParser *, char *, char *);
+	int (*fn_field_value)(IcalParser *, char *, char *);
 	int (*fn_block_begin)(IcalParser *, char *);
 	int (*fn_block_end)(IcalParser *, char *);
 	/* if returning non-zero then halt the parser */
@@ -37,7 +37,7 @@ struct IcalParser {
 	char	*errmsg;
 	size_t	 linenum;
 	char	*tzid;
-	IcalBlock block;
+	IcalBlock blocktype;
 	IcalStack stack[ICAL_STACK_SIZE], *current;
 };
 
