@@ -156,6 +156,8 @@ hook_block_begin(IcalParser *p, char *name)
 static int
 hook_block_end(IcalParser *p, char *name)
 {
+	if (p->current == p->stack)
+		return ical_err(p, "more END: than BEGIN:");
 	if (strcasecmp(p->current->name, name) != 0)
 		return ical_err(p, "mismatching BEGIN: and END:");
 	p->current--;
@@ -319,7 +321,12 @@ ical_parse(IcalParser *p, FILE *fp)
 		}
 		p->linenum += l;
 	} while	(l > 0 && (err = ical_parse_contentline(p, contentline)) == 0);
+
 	free(contentline);
 	free(line);
+
+	if (err == 0 && p->current != p->stack)
+		return ical_err(p, "more BEGIN: than END:");
+
 	return err;
 }
