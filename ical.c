@@ -154,16 +154,21 @@ hook_block_begin(IcalParser *p, char *name)
 }
 
 static int
-hook_block_end(IcalParser *p, char *name)
+hook_block_end_before(IcalParser *p, char *name)
 {
 	if (p->current == p->stack)
 		return ical_err(p, "more END: than BEGIN:");
 	if (strcasecmp(p->current->name, name) != 0)
 		return ical_err(p, "mismatching BEGIN: and END:");
-	p->current--;
-	if (p->current < p->stack)
+	if (p->current <= p->stack)
 		return ical_err(p, "more END: than BEGIN:");
+	return 0;
+}
 
+static int
+hook_block_end_after(IcalParser *p, char *name)
+{
+	p->current--;
 	if (ical_block_name[p->blocktype] != NULL &&
 	    strcasecmp(ical_block_name[p->blocktype], name) == 0)
 		p->blocktype = ICAL_BLOCK_OTHER;
@@ -264,8 +269,9 @@ ical_parse_contentline(IcalParser *p, char *s)
 		    (err = CALL(p, fn_block_begin, s)) != 0)
 			return err;
 	} else if (strcasecmp(name, "END") == 0) {
-		if ((err = hook_block_end(p, s)) != 0 ||
-		    (err = CALL(p, fn_block_end, s)) != 0)
+		if ((err = hook_block_end_before(p, s)) != 0 ||
+		    (err = CALL(p, fn_block_end, s)) != 0 ||
+		    (err = hook_block_end_after(p, s)) != 0)
 			return err;
 	} else {
 		if ((err = hook_field_value(p, name, s)) != 0 ||

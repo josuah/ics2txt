@@ -22,28 +22,29 @@ Block block;
 static int
 fn_field_name(IcalParser *p, char *name)
 {
-	printf("name %s\n", name);
 	return 0;
 }
 
 static int
 fn_block_begin(IcalParser *p, char *name)
 {
-	debug("begin %s\n", name);
+	memset(&block, 0, sizeof block);
 	return 0;
 }
 
 static int
 fn_block_end(IcalParser *p, char *name)
 {
-	debug("end %s\n", name);
+	if (p->blocktype == ICAL_BLOCK_OTHER)
+		return 0;
+	printf("%s\t%lld\t%lld", p->current->name, block.beg, block.end);
+	printf("\n");
 	return 0;
 }
 
 static int
 fn_param_value(IcalParser *p, char *name, char *value)
 {
-	printf("param %s=%s\n", name, value);
 	return 0;
 }
 
@@ -84,16 +85,15 @@ main(int argc, char **argv)
 	p.fn_field_value = fn_field_value;
 
 	if (*argv == NULL) {
+		debug("converting *stdin*");
 		if (ical_parse(&p, stdin) < 0)
-			err("parsing stdin:%d: %s", p.linenum, p.errmsg);
+			err("parsing *stdin*:%d: %s", p.linenum, p.errmsg);
 	}
-
 	for (; *argv != NULL; argv++, argc--) {
 		FILE *fp;
-
 		debug("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
-			err("opening %s", *argv);
+			err("opening %s: %s", *argv, strerror(errno));
 		if (ical_parse(&p, fp) < 0)
 			err("parsing %s:%d: %s", *argv, p.linenum, p.errmsg);
 		fclose(fp);
