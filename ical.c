@@ -297,7 +297,7 @@ ical_getline(char **contentline, char **line, size_t *sz, FILE *fp)
 		num++;
 		strchomp(*line);
 
-		if (strappend(contentline, *line) < 0)
+		if (strappend(contentline, *line) == NULL)
 			return -1;
 		if ((c = fgetc(fp)) == EOF)
 			goto end;

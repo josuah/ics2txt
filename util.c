@@ -110,7 +110,7 @@ strchomp(char *line)
 		line[--len] = '\0';
 }
 
-int
+char *
 strappend(char **dp, char const *s)
 {
 	size_t dlen, slen;
@@ -118,13 +118,11 @@ strappend(char **dp, char const *s)
 
 	dlen = (*dp == NULL) ? 0 : strlen(*dp);
 	slen = strlen(s);
-
 	if ((mem = realloc(*dp, dlen + slen + 1)) == NULL)
-		return -1;
+		return NULL;
 	*dp = mem;
-
 	memcpy(*dp + dlen, s, slen + 1);
-	return 0;
+	return *dp;
 }
 
 /** memory **/

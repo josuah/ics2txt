@@ -15,7 +15,7 @@ void	 debug(char const *fmt, ...);
 size_t	 strlcpy(char *, char const *, size_t);
 char	*strsep(char **, char const *);
 void	 strchomp(char *);
-int	 strappend(char **, char const *);
+char	*strappend(char **, char const *);
 size_t	 strlcat(char *, char const *, size_t);
 
 /** memory **/
