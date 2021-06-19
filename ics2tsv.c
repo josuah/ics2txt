@@ -70,9 +70,9 @@ fn_block_end(IcalParser *p, char *name)
 	if (flag_t == NULL) {
 		printf("\t%lld\t%lld", block.beg, block.end);
 	} else {
-		strftime(buf, sizeof buf, flag_t, gmtime_r(&block.beg, &tm));
+		strftime(buf, sizeof buf, flag_t, localtime_r(&block.beg, &tm));
 		printf("\t%s", buf);
-		strftime(buf, sizeof buf, flag_t, gmtime_r(&block.end, &tm));
+		strftime(buf, sizeof buf, flag_t, localtime_r(&block.end, &tm));
 		printf("\t%s", buf);
 	}
 

@@ -105,6 +105,17 @@ by default in seconds since 1970/01/01.
 .El
 .
 .
+.Sh ENVIRONMENT VARIABLES
+.
+.Bl -tag
+.
+.It TZ
+Timezone to use for printing dates, as documented by
+.Xr tzset 3 .
+.
+.El
+.
+.
 .Sh EXAMPLES
 .
 Convert a calendar from HTTP
@@ -128,11 +139,10 @@ ics2tsv -f CATEGORIES icalendar.ics | awk -F '\et' '{ print >>($6".tsv") }\'
 .
 .Sh SEE ALSO
 .
-.Xr awk 1 ,
 .Xr cal 1 ,
 .Xr calendar 1 ,
 .Xr date 1 ,
-.Xr sort 1
+.Xr tzset 3
 .
 .
 .Sh STANDARDS
