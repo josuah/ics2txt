@@ -24,6 +24,7 @@ struct Block {
 	char *fields[FIELDS_MAX];
 };
 
+static int flag_1 = 0;
 static char default_fields[] = "CATEGORIES,LOCATION,SUMMARY,DESCRIPTION";
 static char *flag_s = ",";
 static char *flag_t = NULL;
@@ -45,6 +46,9 @@ fn_block_begin(IcalParser *p, char *name)
 {
 	(void)p;
 	(void)name;
+
+	if (p->blocktype == ICAL_BLOCK_OTHER)
+		return 0;
 
 	memset(&block, 0, sizeof block);
 	return 0;
@@ -71,6 +75,9 @@ fn_block_end(IcalParser *p, char *name)
 		strftime(buf, sizeof buf, flag_t, gmtime_r(&block.end, &tm));
 		printf("\t%s", buf);
 	}
+
+	/* reserved for recurring events */
+	printf("\t%s", "(null)");
 
 	for (int i = 0; fields[i] != NULL; i++) {
 		fputc('\t', stdout);
@@ -134,7 +141,8 @@ fn_field_value(IcalParser *p, char *name, char *value)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-f fields] [-s subsep] [-t timefmt] [file...]", arg0);
+	fprintf(stderr,"usage: %s [-1] [-f fields] [-s subsep] [-t timefmt]"
+	    " [file...]\n", arg0);
 	exit(1);
 }
 
@@ -153,8 +161,11 @@ main(int argc, char **argv)
 	p.fn_param_value = fn_param_value;
 	p.fn_field_value = fn_field_value;
 
-	while ((c = getopt(argc, argv, "f:s:t:")) != -1) {
+	while ((c = getopt(argc, argv, "1f:s:t:")) != -1) {
 		switch (c) {
+		case '1':
+			flag_1 = 1;
+			break;
 		case 'f':
 			flag_f = optarg;
 			break;
@@ -178,6 +189,13 @@ main(int argc, char **argv)
 			err("too many fields specified with -o flag");
 	} while ((fields[i++] = strsep(&flag_f, ",")) != NULL);
 	fields[i] = NULL;
+
+	if (flag_1) {
+		printf("%s\t%s\t%s", "TYPE", "BEG", "END");
+		for (i = 0; fields[i] != NULL; i++)
+			printf("\t%s", fields[i]);
+		fputc('\n', stdout);
+	}
 
 	if (*argv == NULL || strcmp(*argv, "-") == 0) {
 		debug("converting *stdin*");

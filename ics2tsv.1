@@ -1,0 +1,150 @@
+.Dd $Mdocdate: Mar 1 2020$
+.Dt ICS2TSV 1
+.Os
+.
+.
+.Sh NAME
+.
+.Nm ics2tsv
+.Nd convert an icalendar.ics file to tsv
+.
+.
+.Sh SYNOPSIS
+.
+.Nm ics2tsv
+.Op Fl 1
+.Op Fl f Ar fields
+.Op Fl s Ar subsep
+.Op Fl t Ar timefmt
+.Ar [file.ics...] >file.tsv
+.
+.Sh DESCRIPTION
+.
+.Nm
+is a converter that parse icalendar format and produces lines of output.
+Every line represents an element delimited by
+.Dq BEGIN:
+and
+.Dq  END:
+among
+.Dq VEVENT ,
+.Dq VTODO ,
+.Dq VJOURNAL ,
+.Dq VFREEBUSY ,
+and
+.Dq VALARM .
+.
+.Pp
+The lines are filled with tab-delimited fields, with the first ones:
+.
+.Bl -enum
+.
+.It
+Element type, as encountered after
+.Dq BEGIN
+and
+.Dq END ;
+.
+.It
+Start date, present for
+.Dq VEVENT ,
+.Dq VJOURNAL ,
+.Dq VFREEBUSY ,
+and
+.Dq VALARM
+types.
+.
+.It
+End date, present for
+.Dq VEVENT ,
+.Dq VTODO ,
+.Dq VFREEBUSY ,
+and
+.Dq VALARM
+types.
+.
+.It
+Reserved for future use.
+.
+.El
+.
+.Pp
+And the other fields starting from
+.Pq 5.
+chosen by the
+.Fl f
+flag.
+By default:
+.Dq "CATEGORIES,LOCATION,SUMMARY,DESCRIPTION" .
+.
+.Bl -tag
+.
+.It Fl 1
+Show the name of the columns on the first line before the content.
+.
+.It Fl f Ar field1,field2,field3...
+Chooses the fields from the icalendar to display, in this order,
+separated by a comma
+.Pq Sq \&,
+and case-insensitive
+.
+.It Fl s Ar subsep
+When there are multiple fields with the same value, they are
+concatenated with
+.Ar subsep
+separator, by default a comma
+.Pq Sq \&, .
+.
+.It Fl t Ar timefmt
+Dates from 2nd and 3rd fields are formatted with a
+.Xr strftime 3
+string
+.Ar timeftm ,
+by default in seconds since 1970/01/01.
+.
+.El
+.
+.
+.Sh EXAMPLES
+.
+Convert a calendar from HTTP
+.Pa .ics
+to custom
+.Pa .txt
+sorted by start date:
+.Dl curl "$url.ics" | ics2tsv | sort -n -k 1,1 | tsv2tsv
+.
+.Pp
+.
+.Pp
+Split an
+.ics
+file according to the category, saved as
+.Pa .tsv :
+.Bd -literal
+ics2tsv -f CATEGORIES icalendar.ics | awk -F '\et' '{ print >>($6".tsv") }\'
+.Ed
+.
+.
+.Sh SEE ALSO
+.
+.Xr awk 1 ,
+.Xr cal 1 ,
+.Xr calendar 1 ,
+.Xr date 1 ,
+.Xr sort 1
+.
+.
+.Sh STANDARDS
+.
+.Rs
+.%A Desruisseaux
+.%D September 2009
+.%T Internet Calendaring and Scheduling Core Object Specification (iCalendar)
+.%R RFC 5545
+.Re
+.
+.
+.Sh AUTHORS
+.
+.An Josuah Demangeon Aq Mt me@josuah.net

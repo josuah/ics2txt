@@ -11,7 +11,7 @@ SRC = ical.c base64.c util.c
 HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
 BIN = ics2tree ics2tsv
-MAN1 = ics2txt.1
+MAN1 = ics2txt.1 ics2tsv.1
 MAN5 = tcal.5
 
 all: ${BIN}
@@ -36,5 +36,5 @@ install:
 
 dist: clean
 	mkdir -p ${NAME}-${VERSION}
-	cp -r README Makefile bin ${SRC} ${NAME}-${VERSION}
+	cp -r README Makefile bin ${MAN1} ${MAN5} ${SRC} ${NAME}-${VERSION}
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz
