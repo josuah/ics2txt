@@ -227,6 +227,9 @@ main(int argc, char **argv)
 	if ((flag_from = time(NULL)) == (time_t)-1)
 		err(1, "time: %s", strerror(errno));
 
+	if (pledge("stdio", "") < 0)
+		err(1, "pledge: %s", strerror(errno));
+
 	arg0 = *argv;
 	while ((c = getopt(argc, argv, "f:t:")) > 0) {
 		char const *e;
@@ -248,9 +251,6 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
-
-	if (pledge("stdio", "") < 0)
-		err(1, "pledge: %s", strerror(errno));
 
 	tsv_to_agenda(&ctx, stdin);
 	return 0;

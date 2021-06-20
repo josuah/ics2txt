@@ -7,7 +7,7 @@ CFLAGS = $D $W -g
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/man
 
-SRC = ical.c base64.c util.c
+SRC = ical.c base64.c util.c strtonum.c
 HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
 AWK = tsv2ics.awk

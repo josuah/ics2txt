@@ -72,6 +72,9 @@ main(int argc, char **argv)
 	IcalParser p = {0};
 	arg0 = *argv++;
 
+	if (pledge("stdio") < 0)
+		err(1, "pledge: %s", strerror(errno));
+
 	p.fn_field_name = fn_field_name;
 	p.fn_block_begin = fn_block_begin;
 	p.fn_param_value = fn_param_value;
