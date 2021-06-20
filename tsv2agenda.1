@@ -1,0 +1,76 @@
+.Dd $Mdocdate: Mar 1 2020$
+.Dt TSV2AGENDA 1
+.Os
+.
+.
+.Sh NAME
+.
+.Nm tsv2agenda
+.Nd convert TSV input to a visual agenda roll
+.
+.
+.Sh SYNOPSIS
+.
+.Nm tsv2agenda
+.Op Fl f Ar fromdate
+.Op Fl t Ar todate
+.
+.Sh DESCRIPTION
+.
+.Nm
+is a converter that reads tsv format as produced by
+.Xr ics2tsv 1
+and represents an aligned text agenda from it.
+.
+.Pp
+Every column (after the 4th one) present on the input is displayed on
+the output (if not empty).
+.
+.Bl -tag
+.
+.It Fl f Ar fromdate
+Show only events starting from
+.Ar fromdate .
+By default the current time: showing all future events.
+.
+.It Fl t Ar todate
+Show only events up to
+.Ar todate .
+By default show all future events.
+.
+.El
+.
+.
+.Sh ENVIRONMENT VARIABLES
+.
+.Bl -tag
+.
+.It TZ
+Timezone to use for printing dates, as documented by
+.Xr tzset 3 .
+.
+.El
+.
+.
+.Sh EXAMPLES
+.
+Show the events from a
+.Pa icalendar.ics
+file sorted by start date:
+.Dl curl "$url.ics" | ics2tsv | sort -n -k 1,1 | tsv2agenda
+.
+.Pp
+.
+.
+.Sh SEE ALSO
+.
+.Xr cal 1 ,
+.Xr calendar 1 ,
+.Xr ics2tsv 1 ,
+.Xr tsv2ics 1 ,
+.Xr tzset 3
+.
+.
+.Sh AUTHORS
+.
+.An Josuah Demangeon Aq Mt me@josuah.net

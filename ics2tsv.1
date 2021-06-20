@@ -118,15 +118,6 @@ Timezone to use for printing dates, as documented by
 .
 .Sh EXAMPLES
 .
-Convert a calendar from HTTP
-.Pa .ics
-to custom
-.Pa .txt
-sorted by start date:
-.Dl curl "$url.ics" | ics2tsv | sort -n -k 1,1 | tsv2tsv
-.
-.Pp
-.
 .Pp
 Split an
 .ics
@@ -142,6 +133,7 @@ ics2tsv -f CATEGORIES icalendar.ics | awk -F '\et' '{ print >>($6".tsv") }\'
 .Xr cal 1 ,
 .Xr calendar 1 ,
 .Xr date 1 ,
+.Xr tsv2agenda 1 ,
 .Xr tzset 3
 .
 .

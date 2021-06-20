@@ -119,6 +119,8 @@ print(AgendaCtx *ctx, char **fields)
 		return;
 	localtime_r(&t, &end);
 
+	fputc('\n', stdout);
+
 	print_header1(&ctx->beg, &beg);
 	print_row(ctx, fields, i++);
 	print_header2(&beg, &end);
@@ -142,7 +144,8 @@ tsv_to_agenda(AgendaCtx *ctx, FILE *fp)
 		char *fields[FIELD_MAX];
 
 		ctx->linenum++;
-		if (getline(&ln1, &sz1, fp) < 0)
+		getline(&ln1, &sz1, fp);
+		if (ferror(fp))
 			err(1, "reading stdin: %s", strerror(errno));
 		if (feof(fp))
 			err(1, "empty input");
@@ -167,7 +170,8 @@ tsv_to_agenda(AgendaCtx *ctx, FILE *fp)
 		char *fields[FIELD_MAX];
 
 		ctx->linenum++;
-		if (getline(&ln2, &sz2, fp) < 0)
+		getline(&ln2, &sz2, fp);
+		if (ferror(fp))
 			err(1, "reading stdin: %s", strerror(errno));
 		if (feof(fp))
 			break;
@@ -177,7 +181,6 @@ tsv_to_agenda(AgendaCtx *ctx, FILE *fp)
 			err(1, "line %zd: bad number of columns",
 			    ctx->linenum, strerror(errno));
 
-		fputc('\n', stdout);
 		print(ctx, fields);
 	}
 	fputc('\n', stdout);

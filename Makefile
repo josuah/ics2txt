@@ -12,7 +12,7 @@ HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
 AWK = tsv2ics.awk
 BIN = ics2tree ics2tsv tsv2agenda
-MAN1 = ics2txt.1 ics2tsv.1
+MAN1 = ics2tsv.1 tsv2ics.1 tsv2agenda.1
 
 all: ${BIN}
 
@@ -28,7 +28,7 @@ ${BIN}: ${OBJ} ${BIN:=.o}
 	${CC} ${LDFLAGS} -o $@ $@.o ${OBJ}
 
 clean:
-	rm -rf *.o ${BIN} ${AWK:.awk} ${NAME}-${VERSION} *.gz
+	rm -rf *.o ${BIN} ${AWK:.awk=} ${NAME}-${VERSION} *.gz
 
 install: ${BIN} ${AWK:.awk=}
 	mkdir -p ${DESTDIR}$(PREFIX)/bin
@@ -38,8 +38,13 @@ install: ${BIN} ${AWK:.awk=}
 
 dist: clean
 	mkdir -p ${NAME}-${VERSION}
-	cp -r README Makefile ${AWK} ${MAN1} ${SRC} ${NAME}-${VERSION}
+	cp -r README.md Makefile ${AWK} ${MAN1} ${SRC} ${NAME}-${VERSION}
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz
+
+site: dist
+	notmarkdown README.md | notmarkdown-html | cat .site/head.html - >index.html
+	notmarkdown README.md | notmarkdown-gph | cat .site/head.gph - >index.gph
+	sed -i "s/VERSION/${VERSION}/g" index.*
 
 .SUFFIXES: .awk
 .PHONY: ${AWK}

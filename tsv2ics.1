@@ -1,0 +1,53 @@
+.Dd $Mdocdate: Mar 1 2020$
+.Dt TSV2ICS 1
+.Os
+.
+.
+.Sh NAME
+.
+.Nm tsv2ics
+.Nd convert ics file to simpler tsv or txt formats
+.
+.
+.Sh SYNOPSIS
+.
+.Nm tsv2ics Ar <file.ics >file.txt
+.
+.Sh DESCRIPTION
+.
+.Nm
+convert a tab-separated value input as produced by
+.Xr ics2tsv 1 
+and produce iCalendar formatted output.
+The dates are formatted in UTC timestamps.
+.
+.
+.Sh EXAMPLES
+.
+Only keep the dates and
+.Dq SUMMARY
+from an iCalendar:
+.Dl ics2tsv -f SUMMARY icalendar.ics | tsv2ics
+.
+.
+.Sh SEE ALSO
+.
+.Xr cal 1 ,
+.Xr calendar 1 ,
+.Xr ics2tsv 1 ,
+.Xr tsv2agenda 1
+.
+.
+.Sh STANDARDS
+.
+.Rs
+.%A Desruisseaux
+.%D September 2009
+.%T Internet Calendaring and Scheduling Core Object Specification (iCalendar)
+.%R RFC 5545
+.Re
+.
+.
+.Sh AUTHORS
+.
+.An Josuah Demangeon Aq Mt me@josuah.net
