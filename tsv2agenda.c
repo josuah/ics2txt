@@ -147,7 +147,7 @@ print(AgendaCtx *ctx, char **fields)
 
 	fputc('\n', stdout);
 	for (size_t i = FIELD_OTHER, row = 0; i < ctx->fieldnum; i++) {
-		if (*fields[i] == '\0')
+		if (fields[i][strspn(fields[i], " \\n")] == '\0')
 			continue;
 		print_row(ctx, fields[i], &beg, &end, &row);
 	}
