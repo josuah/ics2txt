@@ -59,7 +59,7 @@ print_time(struct tm *tm)
 }
 
 static void
-print_header1(struct tm *old, struct tm *new)
+print_header0(struct tm *old, struct tm *new)
 {
 	int same;
 
@@ -70,7 +70,7 @@ print_header1(struct tm *old, struct tm *new)
 }
 
 static void
-print_header2(struct tm *beg, struct tm *end)
+print_header1(struct tm *beg, struct tm *end)
 {
 	int same;
 
@@ -83,18 +83,26 @@ print_header2(struct tm *beg, struct tm *end)
 }
 
 static void
-print_header3(void)
+print_headerN(void)
 {
 	print_date(NULL);
 	print_time(NULL);
 }
 
 static void
-print_row(AgendaCtx *ctx, char **fields, size_t i)
+print_header(AgendaCtx *ctx, struct tm *beg, struct tm *end, size_t *num)
 {
-	if (i > ctx->fieldnum || *fields[i] == '\0')
-		return;
-	fprintf(stdout, "%s\n", fields[i]);
+	switch ((*num)++) {
+	case 0:
+		print_header0(&ctx->beg, beg);
+		break;
+	case 1:
+		print_header1(beg, end);
+		break;
+	default:
+		print_headerN();
+		break;
+	}
 }
 
 static void
@@ -102,7 +110,6 @@ print(AgendaCtx *ctx, char **fields)
 {
 	struct tm beg = {0}, end = {0};
 	time_t t;
-	size_t i = FIELD_OTHER;
 	char const *e;
 
 	t = strtonum(fields[FIELD_BEG], INT64_MIN, INT64_MAX, &e);
@@ -120,14 +127,11 @@ print(AgendaCtx *ctx, char **fields)
 	localtime_r(&t, &end);
 
 	fputc('\n', stdout);
-
-	print_header1(&ctx->beg, &beg);
-	print_row(ctx, fields, i++);
-	print_header2(&beg, &end);
-	print_row(ctx, fields, i++);
-	while (i < ctx->fieldnum) {
-		print_header3();
-		print_row(ctx, fields, i++);
+	for (size_t i = FIELD_OTHER, row = 0; i < ctx->fieldnum; i++) {
+		if (*fields[i] == '\0')
+			continue;
+		print_header(ctx, &beg, &end, &row);
+		fprintf(stdout, "%s\n", fields[i]);
 	}
 
 	ctx->beg = beg;
