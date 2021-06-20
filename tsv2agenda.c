@@ -106,6 +106,25 @@ print_header(AgendaCtx *ctx, struct tm *beg, struct tm *end, size_t *num)
 }
 
 static void
+print_row(AgendaCtx *ctx, char *line, struct tm *beg, struct tm *end, size_t *num)
+{
+	print_header(ctx, beg, end, num);
+	for (char *cp = line; *cp != '\0'; cp++) {
+		if (*cp == '\\') {
+			switch (*++cp) {
+			case 'n':
+				fputc('\n', stdout);
+				print_header(ctx, beg, end, num);
+				fputs(": ", stdout);
+				continue;
+			}
+		}
+		fputc(*cp, stdout);
+	}
+	fputc('\n', stdout);
+}
+
+static void
 print(AgendaCtx *ctx, char **fields)
 {
 	struct tm beg = {0}, end = {0};
@@ -130,8 +149,7 @@ print(AgendaCtx *ctx, char **fields)
 	for (size_t i = FIELD_OTHER, row = 0; i < ctx->fieldnum; i++) {
 		if (*fields[i] == '\0')
 			continue;
-		print_header(ctx, &beg, &end, &row);
-		fprintf(stdout, "%s\n", fields[i]);
+		print_row(ctx, fields[i], &beg, &end, &row);
 	}
 
 	ctx->beg = beg;
