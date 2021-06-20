@@ -1,5 +1,4 @@
 #include "ical.h"
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -7,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-
 #include "util.h"
 #include "base64.h"
 
@@ -329,7 +327,6 @@ ical_parse(IcalParser *p, FILE *fp)
 	} while	(l > 0 && (err = ical_parse_contentline(p, contentline)) == 0);
 
 	free(contentline);
-	free(line);
 
 	if (err == 0 && p->current != p->stack)
 		return ical_err(p, "more BEGIN: than END:");

@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-
 #include "ical.h"
 #include "util.h"
+
+#ifndef __OpenBSD__
+#define pledge(...) 0
+#endif
 
 static void
 print_ruler(int level)
@@ -76,7 +79,7 @@ main(int argc, char **argv)
 
 	if (*argv == NULL) {
 		if (ical_parse(&p, stdin) < 0)
-			err("parsing stdin:%d: %s", p.linenum, p.errmsg);
+			err(1, "parsing stdin:%d: %s", p.linenum, p.errmsg);
 	}
 
 	for (; *argv != NULL; argv++, argc--) {
@@ -84,9 +87,9 @@ main(int argc, char **argv)
 
 		debug("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
-			err("opening %s", *argv);
+			err(1, "opening %s", *argv);
 		if (ical_parse(&p, fp) < 0)
-			err("parsing %s:%d: %s", *argv, p.linenum, p.errmsg);
+			err(1, "parsing %s:%d: %s", *argv, p.linenum, p.errmsg);
 		fclose(fp);
 	}
 	return 0;

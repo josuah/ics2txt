@@ -7,7 +7,7 @@
 
 /** logging **/
 extern char *arg0;
-void	 err(char const *fmt, ...);
+void	 err(int, char const *fmt, ...);
 void	 warn(char const *fmt, ...);
 void	 debug(char const *fmt, ...);
 
@@ -17,6 +17,7 @@ char	*strsep(char **, char const *);
 void	 strchomp(char *);
 char	*strappend(char **, char const *);
 size_t	 strlcat(char *, char const *, size_t);
+long long strtonum(const char *, long long, long long, const char **);
 
 /** memory **/
 void	*reallocarray(void *, size_t, size_t);

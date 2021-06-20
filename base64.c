@@ -1,11 +1,8 @@
 #include "base64.h"
-
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include <stdio.h>
 
 static char encode_map[64] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

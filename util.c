@@ -1,5 +1,4 @@
 #include "util.h"
-
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,13 +21,13 @@ _log(char const *fmt, va_list va)
 }
 
 void
-err(char const *fmt, ...)
+err(int e, char const *fmt, ...)
 {
 	va_list va;
 
 	va_start(va, fmt);
 	_log( fmt, va);
-	exit(1);
+	exit(e);
 }
 
 void
@@ -87,8 +86,7 @@ strsep(char **sp, char const *sep)
 	if (*sp == NULL)
 		return NULL;
 	prev = *sp;
-	for (s = *sp; strchr(sep, *s) == NULL; s++)
-		continue;
+	for (s = *sp; strchr(sep, *s) == NULL; s++);
 	if (*s == '\0') {
 		*sp = NULL;
 	} else {

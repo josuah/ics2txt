@@ -5,9 +5,12 @@
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
-
 #include "ical.h"
 #include "util.h"
+
+#ifndef __OpenBSD__
+#define pledge(...) 0
+#endif
 
 #define FIELDS_MAX 128
 
@@ -155,6 +158,9 @@ main(int argc, char **argv)
 
 	arg0 = *argv;
 
+	if (pledge("stdio rpath", "") < 0)
+		err(1, "pledge: %s", strerror(errno));
+
 	p.fn_field_name = fn_field_name;
 	p.fn_block_begin = fn_block_begin;
 	p.fn_block_end = fn_block_end;
@@ -186,12 +192,12 @@ main(int argc, char **argv)
 	i = 0;
 	do {
 		if (i >= sizeof fields / sizeof *fields - 1)
-			err("too many fields specified with -o flag");
+			err(1, "too many fields specified with -o flag");
 	} while ((fields[i++] = strsep(&flag_f, ",")) != NULL);
 	fields[i] = NULL;
 
 	if (flag_1) {
-		printf("%s\t%s\t%s", "TYPE", "BEG", "END");
+		printf("%s\t%s\t%s\t%s", "TYPE", "BEG", "END", "RECUR");
 		for (i = 0; fields[i] != NULL; i++)
 			printf("\t%s", fields[i]);
 		fputc('\n', stdout);
@@ -200,16 +206,17 @@ main(int argc, char **argv)
 	if (*argv == NULL || strcmp(*argv, "-") == 0) {
 		debug("converting *stdin*");
 		if (ical_parse(&p, stdin) < 0)
-			err("parsing *stdin*:%d: %s", p.linenum, p.errmsg);
+			err(1, "parsing *stdin*:%d: %s", p.linenum, p.errmsg);
 	}
 	for (; *argv != NULL; argv++, argc--) {
 		FILE *fp;
 		debug("converting \"%s\"", *argv);
 		if ((fp = fopen(*argv, "r")) == NULL)
-			err("opening %s: %s", *argv, strerror(errno));
+			err(1, "opening %s: %s", *argv, strerror(errno));
 		if (ical_parse(&p, fp) < 0)
-			err("parsing %s:%d: %s", *argv, p.linenum, p.errmsg);
+			err(1, "parsing %s:%d: %s", *argv, p.linenum, p.errmsg);
 		fclose(fp);
 	}
+
 	return 0;
 }

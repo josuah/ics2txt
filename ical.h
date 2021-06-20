@@ -6,9 +6,6 @@
 
 #define ICAL_STACK_SIZE 10
 
-typedef struct IcalParser IcalParser;
-typedef struct IcalStack IcalStack;
-
 typedef enum {
 	ICAL_BLOCK_VEVENT,
 	ICAL_BLOCK_VTODO,
@@ -18,11 +15,12 @@ typedef enum {
 	ICAL_BLOCK_OTHER,
 } IcalBlock;
 
-struct IcalStack {
+typedef struct {
 	char	 name[32];
 	char	 tzid[32];
-};
+} IcalStack;
 
+typedef struct IcalParser IcalParser;
 struct IcalParser {
 	/* function called while parsing in this order */
 	int (*fn_field_name)(IcalParser *, char *);
