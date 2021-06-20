@@ -1,5 +1,6 @@
 *.o
 /ics2tsv
 /ics2tree
+/tsv2ics
 /tsv2agenda
 /ics2txt-[0-9]*

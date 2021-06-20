@@ -10,31 +10,36 @@ MANPREFIX = ${PREFIX}/man
 SRC = ical.c base64.c util.c
 HDR = ical.h base64.h util.h
 OBJ = ${SRC:.c=.o}
+AWK = tsv2ics.awk
 BIN = ics2tree ics2tsv tsv2agenda
 MAN1 = ics2txt.1 ics2tsv.1
-MAN5 = tcal.5
 
 all: ${BIN}
 
 .c.o:
 	${CC} -c ${CFLAGS} -o $@ $<
 
+${AWK:.awk=}:
+	cp $@.awk $@
+	chmod +x $@
+
 ${OBJ}: ${HDR}
 ${BIN}: ${OBJ} ${BIN:=.o}
 	${CC} ${LDFLAGS} -o $@ $@.o ${OBJ}
 
 clean:
-	rm -rf *.o ${BIN} ${NAME}-${VERSION} *.gz
+	rm -rf *.o ${BIN} ${AWK:.awk} ${NAME}-${VERSION} *.gz
 
-install:
+install: ${BIN} ${AWK:.awk=}
 	mkdir -p ${DESTDIR}$(PREFIX)/bin
-	cp bin/* $(BIN) ${DESTDIR}$(PREFIX)/bin
+	cp $(BIN) ${AWK:.awk=} ${DESTDIR}$(PREFIX)/bin
 	mkdir -p ${DESTDIR}$(MANPREFIX)/man1
 	cp ${MAN1} ${DESTDIR}$(MANPREFIX)/man1
-	mkdir -p ${DESTDIR}$(MANPREFIX)/man5
-	cp ${MAN5} ${DESTDIR}$(MANPREFIX)/man5
 
 dist: clean
 	mkdir -p ${NAME}-${VERSION}
-	cp -r README Makefile bin ${MAN1} ${MAN5} ${SRC} ${NAME}-${VERSION}
+	cp -r README Makefile ${AWK} ${MAN1} ${SRC} ${NAME}-${VERSION}
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz
+
+.SUFFIXES: .awk
+.PHONY: ${AWK}

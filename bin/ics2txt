@@ -1,2 +1,0 @@
-#!/bin/sh -e
-exec ics2tsv "$@" | exec tsv2tcal

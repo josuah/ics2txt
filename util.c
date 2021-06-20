@@ -1,4 +1,5 @@
 #include "util.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -121,6 +122,19 @@ strappend(char **dp, char const *s)
 	*dp = mem;
 	memcpy(*dp + dlen, s, slen + 1);
 	return *dp;
+}
+
+size_t
+strsplit(char *s, char **array, size_t len, char const *sep)
+{
+	size_t i;
+
+	assert(len > 0);
+	for (i = 0; i < len; i++)
+		if ((array[i] = strsep(&s, sep)) == NULL)
+			break;
+	array[len - 1] = NULL;
+	return i;
 }
 
 /** memory **/

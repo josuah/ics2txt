@@ -1,17 +1,17 @@
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "util.h"
 
 #ifndef __OpenBSD__
 #define pledge(...) 0
 #endif
-
-#define FIELDS_MAX 128
 
 enum {
 	FIELD_TYPE,
@@ -19,17 +19,20 @@ enum {
 	FIELD_END,
 	FIELD_RECUR,
 	FIELD_OTHER,
+	FIELD_MAX = 128,
 };
 
 typedef struct {
 	struct tm beg, end;
+	char *fieldnames[FIELD_MAX];
+	size_t fieldnum;
+	size_t linenum;
 } AgendaCtx;
 
-static size_t field_categories = 0;
-static size_t field_location = 0;
-static size_t field_summary = 0;
+static time_t flag_from = INT64_MIN;
+static time_t flag_to = INT64_MAX;
 
-void
+static void
 print_date(struct tm *tm)
 {
  	if (tm == NULL) {
@@ -42,7 +45,7 @@ print_date(struct tm *tm)
 	}
 }
 
-void
+static void
 print_time(struct tm *tm)
 {
 	if (tm == NULL) {
@@ -55,139 +58,175 @@ print_time(struct tm *tm)
 	}
 }
 
-void
-print(AgendaCtx *ctx, char **fields, size_t n)
+static void
+print_header1(struct tm *old, struct tm *new)
+{
+	int same;
+
+	same = (old->tm_year == new->tm_year && old->tm_mon == new->tm_mon &&
+	    old->tm_mday == new->tm_mday);
+	print_date(same ? NULL : new);
+	print_time(new);
+}
+
+static void
+print_header2(struct tm *beg, struct tm *end)
+{
+	int same;
+
+	same = (beg->tm_year == end->tm_year && beg->tm_mon == end->tm_mon &&
+	    beg->tm_mday == end->tm_mday);
+	print_date(same ? NULL : end);
+
+	same = (beg->tm_hour == end->tm_hour && beg->tm_min == end->tm_min);
+	print_time(same ? NULL : end);
+}
+
+static void
+print_header3(void)
+{
+	print_date(NULL);
+	print_time(NULL);
+}
+
+static void
+print_row(AgendaCtx *ctx, char **fields, size_t i)
+{
+	if (i > ctx->fieldnum || *fields[i] == '\0')
+		return;
+	fprintf(stdout, "%s\n", fields[i]);
+}
+
+static void
+print(AgendaCtx *ctx, char **fields)
 {
 	struct tm beg = {0}, end = {0};
 	time_t t;
+	size_t i = FIELD_OTHER;
 	char const *e;
-	int rows, samedate;
 
-	t = strtonum(fields[FIELD_BEG], 0, UINT32_MAX, &e);
+	t = strtonum(fields[FIELD_BEG], INT64_MIN, INT64_MAX, &e);
 	if (e != NULL)
 		err(1, "start time %s is %s", fields[FIELD_BEG], e);
+	if (t > flag_to)
+		return;
 	localtime_r(&t, &beg);
 
-	t = strtonum(fields[FIELD_END], 0, UINT32_MAX, &e);
+	t = strtonum(fields[FIELD_END], INT64_MIN, INT64_MAX, &e);
 	if (e != NULL)
 		err(1, "end time %s is %s", fields[FIELD_END], e);
+	if (t < flag_from)
+		return;
 	localtime_r(&t, &end);
 
-	fputc('\n', stdout);
-
-	samedate = (ctx->beg.tm_year != beg.tm_year || ctx->beg.tm_mon != beg.tm_mon ||
-	    ctx->beg.tm_mday != beg.tm_mday);
-	print_date(samedate ? &beg : NULL);
-	print_time(&beg);
-
-	assert(field_summary < n);
-	assert(field_summary > FIELD_OTHER);
-	fprintf(stdout, "%s\n", fields[field_summary]);
-
-	samedate = (beg.tm_year != end.tm_year || beg.tm_mon != end.tm_mon ||
-	    beg.tm_mday != end.tm_mday);
-	print_date(samedate ? &end : NULL);
-	print_time(&end);
-
-	rows = 0;
-
-	assert(field_location < n);
-	if (field_location > 0 && fields[field_location][0] != '\0') {
-		assert(field_summary > FIELD_OTHER);
-		fprintf(stdout, "%s\n", fields[field_location]);
-		rows++;
-	}
-
-	assert(field_categories < n);
-	if (field_categories > 0 && fields[field_categories][0] != '\0') {
-		assert(field_summary > FIELD_OTHER);
-		if (rows > 0) {
-			print_date(NULL);
-			print_time(NULL);
-		}
-		fprintf(stdout, "%s\n", fields[field_categories]);
+	print_header1(&ctx->beg, &beg);
+	print_row(ctx, fields, i++);
+	print_header2(&beg, &end);
+	print_row(ctx, fields, i++);
+	while (i < ctx->fieldnum) {
+		print_header3();
+		print_row(ctx, fields, i++);
 	}
 
 	ctx->beg = beg;
 	ctx->end = end;
 }
 
-void
-set_fields_num(char **fields, size_t n)
+static void
+tsv_to_agenda(AgendaCtx *ctx, FILE *fp)
 {
-	struct { char *name; size_t *var; } map[] = {
-		{ "CATEGORIES", &field_categories },
-		{ "LOCATION", &field_location },
-		{ "SUMMARY", &field_summary },
-		{ NULL, NULL }
-	};
+	char *ln1 = NULL, *ln2 = NULL;
+	size_t sz1 = 0, sz2 = 0;
 
-	debug("n=%zd", n);
-	for (size_t i1 = FIELD_OTHER; i1 < n; i1++)
-		for (size_t i2 = 0; map[i2].name != NULL; i2++)
-			if (strcasecmp(fields[i1], map[i2].name) == 0)
-				*map[i2].var = i1;
-	if (field_summary < FIELD_OTHER)
-		err(1, "missing column SUMMARY");
+	if (ctx->linenum == 0) {
+		char *fields[FIELD_MAX];
+
+		ctx->linenum++;
+		if (getline(&ln1, &sz1, fp) < 0)
+			err(1, "reading stdin: %s", strerror(errno));
+		if (feof(fp))
+			err(1, "empty input");
+
+		strchomp(ln1);
+		ctx->fieldnum = strsplit(ln1, fields, FIELD_MAX, "\t");
+		if (ctx->fieldnum == FIELD_MAX)
+			err(1, "line 1: too many fields");
+		if (ctx->fieldnum < FIELD_OTHER)
+			err(1, "line 1: not enough input columns");
+		if (strcasecmp(fields[0], "TYPE") != 0)
+			err(1, "line 1: 1st column is not \"TYPE\"");
+		if (strcasecmp(fields[1], "START") != 0)
+			err(1, "line 1: 2nd column is not \"START\"");
+		if (strcasecmp(fields[2], "END") != 0)
+			err(1, "line 1: 3rd column is not \"END\"");
+		if (strcasecmp(fields[3], "RECUR") != 0)
+			err(1, "line 1: 4th column is not \"RECUR\"");
+	}
+
+	for (;;) {
+		char *fields[FIELD_MAX];
+
+		ctx->linenum++;
+		if (getline(&ln2, &sz2, fp) < 0)
+			err(1, "reading stdin: %s", strerror(errno));
+		if (feof(fp))
+			break;
+
+		strchomp(ln2);
+		if (strsplit(ln2, fields, FIELD_MAX, "\t") != ctx->fieldnum)
+			err(1, "line %zd: bad number of columns",
+			    ctx->linenum, strerror(errno));
+
+		fputc('\n', stdout);
+		print(ctx, fields);
+	}
+	fputc('\n', stdout);
+
+	free(ln1);
+	free(ln2);
 }
 
-ssize_t
-tsv_getline(char **fields, size_t max, char **line, size_t *sz, FILE *fp)
+static void
+usage(void)
 {
-	char *s;
-	size_t n = 0;
-
-	if (getline(line, sz, fp) <= 0)
-		return ferror(fp) ? -1 : 0;
-	s = *line;
-	strchomp(s);
-
-	do {
-		if (n >= max)
-			return errno=E2BIG, -1;
-	} while ((fields[n++] = strsep(&s, "\t")) != NULL);
-
-	return n - 1;
+	fprintf(stderr, "usage: %s [-f fromdate] [-t todate]\n", arg0);
+	exit(1);
 }
 
 int
 main(int argc, char **argv)
 {
 	AgendaCtx ctx = {0};
-	ssize_t nfield, n;
-	size_t sz = 0;
-	char *line = NULL, *fields[FIELDS_MAX];
+	char c;
+
+	if ((flag_from = time(NULL)) == (time_t)-1)
+		err(1, "time: %s", strerror(errno));
 
 	arg0 = *argv;
+	while ((c = getopt(argc, argv, "f:t:")) > 0) {
+		char const *e;
+
+		switch (c) {
+		case 'f':
+			flag_from = strtonum(optarg, INT64_MIN, INT64_MAX, &e);
+			if (e != NULL)
+				err(1, "fromdate value %s is %s", optarg, e);
+			break;
+		case 't':
+			flag_to = strtonum(optarg, INT64_MIN, INT64_MAX, &e);
+			if (e != NULL)
+				err(1, "todate value %s is %s", optarg, e);
+			break;
+		default:
+			usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
 
 	if (pledge("stdio", "") < 0)
 		err(1, "pledge: %s", strerror(errno));
 
-	nfield = tsv_getline(fields, FIELDS_MAX, &line, &sz, stdin);
-	if (nfield == -1)
-		err(1, "reading stdin: %s", strerror(errno));
-	if (nfield == 0)
-		err(1, "empty input");
-	if (nfield < FIELD_OTHER)
-		err(1, "not enough input columns");
-
-	set_fields_num(fields, nfield);
-
-	for (size_t num = 1;; num++) {
-		n = tsv_getline(fields, FIELDS_MAX, &line, &sz, stdin);
-		if (n < 0)
-			err(1, "line %zd: reading stdin: %s", num, strerror(errno));
-		if (n == 0)
-			break;
-		if (n != nfield)
-			err(1, "line %zd: had %lld columns, wanted %lld",
-			    num, n, nfield);
-
-		print(&ctx, fields, n);
-	}
-	fputc('\n', stdout);
-
-	free(line);
-
+	tsv_to_agenda(&ctx, stdin);
 	return 0;
 }

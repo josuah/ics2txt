@@ -27,11 +27,11 @@ struct Block {
 	char *fields[FIELDS_MAX];
 };
 
-static int flag_1 = 0;
-static char default_fields[] = "CATEGORIES,LOCATION,SUMMARY,DESCRIPTION";
-static char *flag_s = ",";
-static char *flag_t = NULL;
-static char *flag_f = default_fields;
+static int flag_header = 1;
+static char default_fields[] = "SUMMARY,DESCRIPTION,CATEGORIES,LOCATION";
+static char *flag_sep = ",";
+static char *flag_timefmt = NULL;
+static char *flag_fields = default_fields;
 static char *fields[FIELDS_MAX];
 static Block block;
 
@@ -60,9 +60,6 @@ fn_block_begin(IcalParser *p, char *name)
 static int
 fn_block_end(IcalParser *p, char *name)
 {
-	char buf[128];
-	struct tm tm = {0};
-
 	(void)name;
 
 	if (p->blocktype == ICAL_BLOCK_OTHER)
@@ -70,12 +67,18 @@ fn_block_end(IcalParser *p, char *name)
 	fputs(p->current->name, stdout);
 
 	/* printing dates with %s is much much slower than %lld */
-	if (flag_t == NULL) {
+	if (flag_timefmt == NULL) {
 		printf("\t%lld\t%lld", block.beg, block.end);
 	} else {
-		strftime(buf, sizeof buf, flag_t, localtime_r(&block.beg, &tm));
+		char buf[128];
+		struct tm tm = {0};
+
+		localtime_r(&block.beg, &tm);
+		strftime(buf, sizeof buf, flag_timefmt, &tm);
 		printf("\t%s", buf);
-		strftime(buf, sizeof buf, flag_t, localtime_r(&block.end, &tm));
+
+		localtime_r(&block.end, &tm);
+		strftime(buf, sizeof buf, flag_timefmt, &tm);
 		printf("\t%s", buf);
 	}
 
@@ -131,7 +134,7 @@ fn_field_value(IcalParser *p, char *name, char *value)
 				if ((block.fields[i] = strdup(value)) == NULL)
 					return ical_err(p, strerror(errno));
 			} else {
-				if (strappend(&block.fields[i], flag_s) == NULL ||
+				if (strappend(&block.fields[i], flag_sep) == NULL ||
 				    strappend(&block.fields[i], value) == NULL)
 					return ical_err(p, strerror(errno));
 			}
@@ -144,7 +147,7 @@ fn_field_value(IcalParser *p, char *name, char *value)
 static void
 usage(void)
 {
-	fprintf(stderr,"usage: %s [-1] [-f fields] [-s subsep] [-t timefmt]"
+	fprintf(stderr,"usage: %s [-1] [-f fields] [-s separator] [-t timefmt]"
 	    " [file...]\n", arg0);
 	exit(1);
 }
@@ -153,7 +156,6 @@ int
 main(int argc, char **argv)
 {
 	IcalParser p = {0};
-	size_t i;
 	int c;
 
 	arg0 = *argv;
@@ -167,19 +169,22 @@ main(int argc, char **argv)
 	p.fn_param_value = fn_param_value;
 	p.fn_field_value = fn_field_value;
 
-	while ((c = getopt(argc, argv, "1f:s:t:")) != -1) {
+	while ((c = getopt(argc, argv, "01f:s:t:")) != -1) {
 		switch (c) {
+		case '0':
+			flag_header = 0;
+			break;
 		case '1':
-			flag_1 = 1;
+			flag_header = 1;
 			break;
 		case 'f':
-			flag_f = optarg;
+			flag_fields = optarg;
 			break;
 		case 's':
-			flag_s = optarg;
+			flag_sep = optarg;
 			break;
 		case 't':
-			flag_t = optarg;
+			flag_timefmt = optarg;
 			break;
 		case '?':
 			usage();
@@ -189,16 +194,12 @@ main(int argc, char **argv)
 	argv += optind;
 	argc -= optind;
 
-	i = 0;
-	do {
-		if (i >= sizeof fields / sizeof *fields - 1)
-			err(1, "too many fields specified with -o flag");
-	} while ((fields[i++] = strsep(&flag_f, ",")) != NULL);
-	fields[i] = NULL;
+	if (strsplit(flag_fields, fields, LEN(fields), ",") < 0)
+		err(1, "too many fields specified with -f flag");
 
-	if (flag_1) {
-		printf("%s\t%s\t%s\t%s", "TYPE", "BEG", "END", "RECUR");
-		for (i = 0; fields[i] != NULL; i++)
+	if (flag_header) {
+		printf("%s\t%s\t%s\t%s", "TYPE", "START", "END", "RECUR");
+		for (size_t i = 0; fields[i] != NULL; i++)
 			printf("\t%s", fields[i]);
 		fputc('\n', stdout);
 	}
