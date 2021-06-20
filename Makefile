@@ -1,5 +1,5 @@
 NAME = ics2txt
-VERSION = 0.2
+VERSION = 1.0
 
 W = -Wall -Wextra -std=c99 --pedantic
 D = -D_POSIX_C_SOURCE=200811L -D_BSD_SOURCE -DVERSION='"${VERSION}"'
@@ -42,8 +42,8 @@ dist: clean
 	tar -cf - ${NAME}-${VERSION} | gzip -c >${NAME}-${VERSION}.tar.gz
 
 site: dist
-	notmarkdown README.md | notmarkdown-html | cat .site/head.html - >index.html
-	notmarkdown README.md | notmarkdown-gph | cat .site/head.gph - >index.gph
+	notmarkdown README.md | notmarkdown-html | cat .head.html - >index.html
+	notmarkdown README.md | notmarkdown-gph | cat .head.gph - >index.gph
 	sed -i "s/VERSION/${VERSION}/g" index.*
 
 .SUFFIXES: .awk
