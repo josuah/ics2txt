@@ -1,3 +1,5 @@
+#include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +74,7 @@ main(int argc, char **argv)
 	IcalParser p = {0};
 	arg0 = *argv++;
 
-	if (pledge("stdio") < 0)
+	if (pledge("stdio", "") < 0)
 		err(1, "pledge: %s", strerror(errno));
 
 	p.fn_field_name = fn_field_name;
