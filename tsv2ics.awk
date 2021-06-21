@@ -67,7 +67,7 @@ BEGIN {
 
 NR == 1 {
 	if ($1 != "TYPE" || $2 != "START" || $3 != "END" || $4 != "RECUR") {
-		print "tsv2ics: invalid column names on first line" >/dev/stderr
+		print "tsv2ics: invalid column names on first line" >"/dev/stderr"
 		exit(EXIT = 1)
 	}
 	for (i = 1; i <= NF; i++) {
