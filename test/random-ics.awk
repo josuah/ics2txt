@@ -16,8 +16,9 @@ BEGIN {
 		}
 		first = 0
 
+		data | getline
 		col = random(26) + 1
-		out = substr($0, 1, col)
+		out = "X-"substr($0, 1, col)
 		$0 = substr($0, col + 1)
 		n = random(30)
 		for (i = 0; i <= n; i++) {
@@ -25,14 +26,10 @@ BEGIN {
 			if (length($0) < col)
 				continue
 			eq = random(int(col / 2)) + 1
-			out = out substr($0, 1, eq) "=" substr($1, eq + 1, col) ";"
+			out = out ";" substr($0, 1, eq) "=" substr($1, eq + 1, col)
 			$0 = substr($0, col + 1)
 		}
 		out = out $0 ":"
-		data | getline
-		out = out $0
-		if (out ~ "\n" || out !~ ":")
-			exit(1)
 		print(out)
 	}
 
