@@ -2,14 +2,13 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 
 char *arg0;
-
-/** logging **/
 
 static void
 _log(char const *fmt, va_list va)
@@ -53,8 +52,6 @@ debug(char const *fmt, ...)
 	va_start(va, fmt);
 	_log(fmt, va);
 }
-
-/** strings **/
 
 size_t
 strlcpy(char *d, char const *s, size_t sz)
@@ -137,7 +134,35 @@ strsplit(char *s, char **array, size_t len, char const *sep)
 	return i;
 }
 
-/** memory **/
+long long
+strtonum(char const *s, long long min, long long max, char const **errstr)
+{
+	long long ll = 0;
+	char *end;
+
+	assert(min < max);
+	errno = 0;
+	ll = strtoll(s, &end, 10);
+	if ((errno == ERANGE && ll == LLONG_MIN) || ll < min) {
+		if (errstr != NULL)
+			*errstr = "too small";
+		return 0;
+	}
+	if ((errno == ERANGE && ll == LLONG_MAX) || ll > max) {
+		if (errstr != NULL)
+			*errstr = "too large";
+		return 0;
+	}
+	if (errno == EINVAL || *end != '\0') {
+		if (errstr != NULL)
+			*errstr = "invalid";
+		return 0;
+	}
+	assert(errno == 0);
+	if (errstr != NULL)
+		*errstr = NULL;
+	return ll;
+}
 
 void *
 reallocarray(void *mem, size_t n, size_t sz)
@@ -146,8 +171,6 @@ reallocarray(void *mem, size_t n, size_t sz)
 		return errno=ERANGE, NULL;
 	return realloc(mem, n * sz);
 }
-
-/** time **/
 
 time_t
 tztime(struct tm *tm, char const *tz)
