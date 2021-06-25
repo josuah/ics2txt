@@ -106,20 +106,48 @@ print_header(AgendaCtx *ctx, struct tm *beg, struct tm *end, size_t *num)
 }
 
 static void
-print_row(AgendaCtx *ctx, char *line, struct tm *beg, struct tm *end, size_t *num)
+unescape(char const *s, char *d)
 {
-	print_header(ctx, beg, end, num);
-	for (char *cp = line; *cp != '\0'; cp++) {
-		if (*cp == '\\') {
-			switch (*++cp) {
-			case 'n':
-				fputc('\n', stdout);
-				print_header(ctx, beg, end, num);
-				fputs(": ", stdout);
-				continue;
-			}
+	for (; *s != '\0'; s++) {
+		if (*s == '\\') {
+			s++;
+			*d++ = (*s == 'n') ? '\n' : (*s == 't') ? ' ' : *s;
+		} else {
+			if (*s == '\\')
+				debug("s='%c'", *s);
+			*d++ = *s;
 		}
-		fputc(*cp, stdout);
+	}
+	*d = '\0';
+}
+
+static void
+print_row(AgendaCtx *ctx, char *s, struct tm *beg, struct tm *end, size_t *num)
+{
+	unescape(s, s);
+
+	print_header(ctx, beg, end, num);
+	for (size_t i, n = 0; *s != '\0'; s++) {
+		switch (*s) {
+		case '\n':
+newline:
+			fputc('\n', stdout);
+			print_header(ctx, beg, end, num);
+			fputs(": ", stdout);
+			n = 0;
+			break;
+		case ' ':
+		case '\t':
+			i = strcspn(s + 1, " \t\n");
+			if (n + i > 70)
+				goto newline;
+			fputc(' ', stdout);
+			n++;
+			break;
+		default:
+			fputc(*s, stdout);
+			n++;
+		}
 	}
 	fputc('\n', stdout);
 }
