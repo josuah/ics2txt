@@ -1,5 +1,0 @@
-[9|release vVERSION|/NAME/NAME-VERSION.tgz|server|port]
-[h|git clone git://git.z0.is/NAME/|URL:git://git.z0.is/NAME/||]
-[1|man pages|/NAME/man/|server|port]
-[h|web version|URL:http://z0.is/NAME/||]
-

@@ -1,6 +1,6 @@
 ics2txt
 =======
-`git://git.josuah.net/ics2txt` - [1.0](/ics2txt/ics2txt-1.0.tgz)
+`git://git.josuah.net/ics2txt` - [1.0](/tool/ics2txt/ics2txt-1.0.tgz)
 
 Set of tools to work with the popular iCalendar format and converting to even
 simpler TSV and text forms.
